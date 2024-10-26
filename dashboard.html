@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -28,6 +28,7 @@
                 document.getElementById('userName').textContent = user.displayName;
                 await updateUserSession(user);
                 loadProducts();
+                loadRecentlyAddedProduct();
             } else {
                 window.location.href = 'index.html';
             }
@@ -70,6 +71,29 @@
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                 `;
                 productsContainer.appendChild(productElement);
+            });
+        }
+
+        async function loadRecentlyAddedProduct() {
+            const recentProductContainer = document.getElementById('recentProductContainer');
+            recentProductContainer.innerHTML = ''; // Clear existing content
+            
+            const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
+            const querySnapshot = await getDocs(q);
+            
+            querySnapshot.forEach((doc) => {
+                const product = doc.data();
+                const productElement = document.createElement('div');
+                productElement.className = 'product recent-product';
+                productElement.innerHTML = `
+                    <h3>Recently Added Product</h3>
+                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                    <h4>${product.name}</h4>
+                    <p>${product.description}</p>
+                    <p class="price">Price: $${product.price.toFixed(2)}</p>
+                    <button onclick="buyProduct('${doc.id}')">Buy Now</button>
+                `;
+                recentProductContainer.appendChild(productElement);
             });
         }
 
@@ -182,6 +206,15 @@
         .add-product-link:hover {
             text-decoration: underline;
         }
+        .recent-product {
+            background-color: #e6f7ff;
+            border: 2px solid #1890ff;
+            margin-bottom: 20px;
+        }
+        .recent-product h3 {
+            color: #1890ff;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -191,6 +224,8 @@
         <button onclick="signOut()">Sign Out</button>
     </header>
     <div class="container">
+        <h2>Recently Added Product</h2>
+        <div id="recentProductContainer"></div>
         <h2>Available Products</h2>
         <a href="add-product.html" class="add-product-link">Add New Product</a>
         <div id="productsContainer"></div>
