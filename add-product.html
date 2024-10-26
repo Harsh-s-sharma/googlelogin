@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -41,6 +40,12 @@
 
             if (!name || !description || isNaN(price) || !imageFile) {
                 alert('Please fill all fields and select an image.');
+                return;
+            }
+
+            // Basic file type validation (optional)
+            if (!imageFile.type.startsWith('image/')) {
+                alert('Please select a valid image file.');
                 return;
             }
 
