@@ -43,35 +43,32 @@
                 return;
             }
 
-            // Basic file type validation (optional)
             if (!imageFile.type.startsWith('image/')) {
                 alert('Please select a valid image file.');
                 return;
             }
 
             try {
-                // Check if user is authenticated
                 if (!auth.currentUser) {
                     throw new Error('User not authenticated');
                 }
 
-                // Upload image to Firebase Storage
                 const storageRef = ref(storage, 'product_images/' + imageFile.name);
                 await uploadBytes(storageRef, imageFile);
                 const imageUrl = await getDownloadURL(storageRef);
 
-                // Add product to Firestore
-                const docRef = await addDoc(collection(db, 'products'), {
+                const productData = {
                     name,
                     description,
                     price,
                     imageUrl,
                     createdAt: new Date()
-                });
+                };
+                console.log("Uploading product data:", productData);
 
+                const docRef = await addDoc(collection(db, 'products'), productData);
                 console.log("Document written with ID: ", docRef.id);
 
-                // Redirect to dashboard with success message
                 window.location.href = 'dashboard.html?message=Product uploaded successfully!';
             } catch (error) {
                 console.error('Error uploading product:', error);
