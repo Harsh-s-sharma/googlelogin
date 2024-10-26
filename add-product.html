@@ -58,8 +58,8 @@
                     createdAt: new Date()
                 });
 
-                alert('Product uploaded successfully!');
-                document.getElementById('uploadForm').reset();
+                // Redirect to dashboard with success message
+                window.location.href = 'dashboard.html?message=Product uploaded successfully!';
             } catch (error) {
                 console.error('Error uploading product:', error);
                 alert('Failed to upload product. Please try again.');
