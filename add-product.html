@@ -50,12 +50,8 @@
                     throw new Error('User not authenticated');
                 }
 
-                // Generate a unique filename
-                const timestamp = Date.now();
-                const uniqueFilename = `${timestamp}_${imageFile.name}`;
-
                 // Upload image to Firebase Storage
-                const storageRef = ref(storage, 'product_images/' + uniqueFilename);
+                const storageRef = ref(storage, 'product_images/' + imageFile.name);
                 await uploadBytes(storageRef, imageFile);
                 const imageUrl = await getDownloadURL(storageRef);
 
