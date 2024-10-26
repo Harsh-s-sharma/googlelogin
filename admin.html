@@ -1,7 +1,7 @@
 <!-- Firebase SDK -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
   import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
   import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
 
@@ -37,12 +37,12 @@
       await auth.signInWithRedirect(provider);
       
       // The sign-in process will redirect. When the user comes back, check the result
-      const result = await auth.getRedirectResult();
+      const result = await getRedirectResult(auth);
       
       if (result.user) {
         const user = result.user;
-        
-        // Check if the user is an admin (you might want to implement a more secure check)
+
+        // Check if the user is an admin
         if (user.email === 'admin@example.com') {
           document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
           document.getElementById('status').style.color = '#4CAF50';
@@ -64,10 +64,10 @@
           // Subscribe to admin topic
           const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
           if (currentToken) {
-            fetch('https://iid.googleapis.com/iid/v1/' + currentToken + '/rel/topics/admin', {
+            await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
               method: 'POST',
               headers: {
-                Authorization: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I',
+                Authorization: 'key=YOUR_SERVER_KEY', // Use your actual server key here
                 'Content-Type': 'application/json'
               }
             });
@@ -82,16 +82,16 @@
     } catch (error) {
       document.getElementById('status').textContent = `Error: ${error.message}`;
       document.getElementById('status').style.color = '#F44336';
+      console.error('Admin login error:', error);
     }
   }
 
   // Check for redirect result when the page loads
   window.addEventListener('load', async () => {
     try {
-      const result = await auth.getRedirectResult();
+      const result = await getRedirectResult(auth);
       if (result.user) {
-        // User is signed in, you can handle this case if needed
-        console.log('User is signed in after redirect');
+        console.log('User is signed in after redirect:', result.user);
       }
     } catch (error) {
       console.error('Error after redirect:', error);
