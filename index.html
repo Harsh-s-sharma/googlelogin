@@ -85,6 +85,8 @@
       document.getElementById('userContainer').style.display = 'block';
       document.getElementById('userAvatar').src = user.photoURL || '';
       document.getElementById('userName').textContent = user.displayName || user.email;
+      // Redirect to dashboard if already signed in
+      window.location.href = 'dashboard.html';
     } else {
       // User is signed out
       document.getElementById('loginContainer').style.display = 'flex';
