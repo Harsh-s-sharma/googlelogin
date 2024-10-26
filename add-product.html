@@ -53,7 +53,7 @@
                     throw new Error('User not authenticated');
                 }
 
-                const storageRef = ref(storage, 'product_images/' + imageFile.name);
+                const storageRef = ref(storage, `product_images/${imageFile.name}`);
                 await uploadBytes(storageRef, imageFile);
                 const imageUrl = await getDownloadURL(storageRef);
 
