@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, setDoc, getDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -35,20 +35,18 @@
         });
 
         async function updateUserSession(user) {
-            const sessionRef = collection(db, `userSessions`, user.uid);
+            const sessionRef = doc(db, "userSessions", user.uid);
             try {
-                const snapshot = await getDocs(sessionRef);
-                if (snapshot.empty) {
-                    await addDoc(sessionRef, {
+                const sessionDoc = await getDoc(sessionRef);
+                if (sessionDoc.exists()) {
+                    await setDoc(sessionRef, { lastActive: new Date().toISOString() }, { merge: true });
+                } else {
+                    await setDoc(sessionRef, {
                         userId: user.uid,
                         email: user.email,
                         lastLogin: new Date().toISOString(),
                         lastActive: new Date().toISOString()
                     });
-                } else {
-                    await setDoc(doc(db, `userSessions`, user.uid), {
-                        lastActive: new Date().toISOString()
-                    }, { merge: true });
                 }
             } catch (error) {
                 console.error("Error updating user session: ", error);
@@ -58,11 +56,9 @@
         async function loadProducts() {
             const productsContainer = document.getElementById('productsContainer');
             productsContainer.innerHTML = ''; // Clear existing products
-            const productsRef = collection(db, 'products');
-            const q = query(productsRef, orderBy('createdAt', 'desc'));
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                snapshot.forEach((doc) => {
+            try {
+                const productsSnapshot = await getDocs(collection(db, 'products'));
+                productsSnapshot.forEach((doc) => {
                     const product = doc.data();
                     const productElement = document.createElement('div');
                     productElement.className = 'product';
@@ -70,11 +66,14 @@
                         <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
                         <h3>${product.name}</h3>
                         <p>${product.description}</p>
-                        <p class="price">Price: $${parseFloat(product.price).toFixed(2)}</p>
+                        <p class="price">Price: $${product.price.toFixed(2)}</p>
                         <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                     `;
                     productsContainer.appendChild(productElement);
                 });
+            } catch (error) {
+                console.error('Error loading products:', error);
+                productsContainer.innerHTML = '<p>Error loading products. Please try again later.</p>';
             }
         }
 
@@ -82,34 +81,31 @@
             const recentProductContainer = document.getElementById('recentProductContainer');
             recentProductContainer.innerHTML = ''; // Clear existing content
             
-            const recentProductQuery = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
-            const snapshot = await getDocs(recentProductQuery);
+            const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
+            const querySnapshot = await getDocs(q);
             
-            if (!snapshot.empty) {
-                snapshot.forEach((doc) => {
-                    const product = doc.data();
-                    const productElement = document.createElement('div');
-                    productElement.className = 'product recent-product';
-                    productElement.innerHTML = `
-                        <h3>Recently Added Product</h3>
-                        <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
-                        <h4>${product.name}</h4>
-                        <p>${product.description}</p>
-                        <p class="price">Price: $${parseFloat(product.price).toFixed(2)}</p>
-                        <button onclick="buyProduct('${doc.id}')">Buy Now</button>
-                    `;
-                    recentProductContainer.appendChild(productElement);
-                });
-            }
+            querySnapshot.forEach((doc) => {
+                const product = doc.data();
+                const productElement = document.createElement('div');
+                productElement.className = 'product recent-product';
+                productElement.innerHTML = `
+                    <h3>Recently Added Product</h3>
+                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                    <h4>${product.name}</h4>
+                    <p>${product.description}</p>
+                    <p class="price">Price: $${product.price.toFixed(2)}</p>
+                    <button onclick="buyProduct('${doc.id}')">Buy Now</button>
+                `;
+                recentProductContainer.appendChild(productElement);
+            });
         }
 
         window.buyProduct = async function(productId) {
             try {
-                const ordersRef = collection(db, 'orders');
-                await addDoc(ordersRef, {
+                await addDoc(collection(db, 'orders'), {
                     userId: auth.currentUser.uid,
                     productId: productId,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date()
                 });
                 alert('Product purchased successfully!');
                 await updateUserSession(auth.currentUser);
@@ -222,17 +218,6 @@
             color: #1890ff;
             text-align: center;
         }
-        footer {
-            background-color: #333;
-            color: white;
-            padding: 10px 0;
-            text-align: center;
-            position: fixed;
-            left: 0;
-            bottom: 0;
-            width: 100%;
-            z-index: 1000;
-        }
     </style>
 </head>
 <body>
@@ -244,12 +229,9 @@
     <div class="container">
         <h2>Recently Added Product</h2>
         <div id="recentProductContainer"></div>
-        
-        <a class='add-product-link' href='/add-product'>Add New Product</a>
+        <h2>Available Products</h2>
+        <a href="add-product.html" class="add-product-link">Add New Product</a>
         <div id="productsContainer"></div>
     </div>
-    <footer>
-        <p>&copy; 2023 Product Store. All rights reserved.</p>
-    </footer>
 </body>
 </html>
