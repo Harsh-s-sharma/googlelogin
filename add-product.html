@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+    
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,6 +45,11 @@
             }
 
             try {
+                // Check if user is authenticated
+                if (!auth.currentUser) {
+                    throw new Error('User not authenticated');
+                }
+
                 // Upload image to Firebase Storage
                 const storageRef = ref(storage, 'product_images/' + imageFile.name);
                 await uploadBytes(storageRef, imageFile);
