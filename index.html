@@ -39,12 +39,8 @@
     signInWithPopup(auth, provider)
       .then((result) => {
         const user = result.user;
-        document.getElementById('status').textContent = `Welcome, ${user.displayName}!`;
-        document.getElementById('status').style.color = '#4CAF50';
-        document.getElementById('loginContainer').style.display = 'none';
-        document.getElementById('userContainer').style.display = 'block';
-        document.getElementById('userAvatar').src = user.photoURL;
-        document.getElementById('userName').textContent = user.displayName;
+        // Redirect to dashboard after successful login
+        window.location.href = 'dashboard.html';
       }).catch((error) => {
         document.getElementById('status').textContent = `Error: ${error.message}`;
         document.getElementById('status').style.color = '#F44336';
