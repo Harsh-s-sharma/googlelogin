@@ -153,9 +153,6 @@
             color: white;
             padding: 10px 0;
             text-align: center;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
         }
         #productsContainer {
             display: grid;
@@ -240,14 +237,9 @@
 </head>
 <body>
     <header>
-        <nav>
-            <ul>
-                <li><a href="/dashboard">Dashboard</a></li>
-                <li><a href="/add-product">Add Product</a></li>
-                <li><a href="/orders">Orders</a></li>
-            </ul>
-        </nav>
-        <button onclick="signOut()">Logout</button>
+        <h1>Welcome to the Dashboard</h1>
+        <p>Hello, <span id="userName"></span>!</p>
+        <button onclick="signOut()">Sign Out</button>
     </header>
     <div class="container">
         <h2>Recently Added Product</h2>
