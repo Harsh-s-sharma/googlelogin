@@ -33,41 +33,61 @@
 
     const provider = new GoogleAuthProvider();
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      // Use signInWithRedirect instead of signInWithPopup
+      await auth.signInWithRedirect(provider);
       
-      // Check if the user is an admin (you might want to implement a more secure check)
-      if (user.email === 'admin@example.com') {
-        document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
-        document.getElementById('status').style.color = '#4CAF50';
+      // The sign-in process will redirect. When the user comes back, check the result
+      const result = await auth.getRedirectResult();
+      
+      if (result.user) {
+        const user = result.user;
         
-        // Get user count
-        const usersSnapshot = await getDocs(collection(db, 'users'));
-        const userCount = usersSnapshot.size;
-        document.getElementById('userCount').textContent = `Total users: ${userCount}`;
-        
-        // Subscribe to admin topic
-        const currentToken = await getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY' });
-        if (currentToken) {
-          fetch('https://iid.googleapis.com/iid/v1/' + currentToken + '/rel/topics/admin', {
-            method: 'POST',
-            headers: {
-              Authorization: 'key=YOUR_SERVER_KEY',
-              'Content-Type': 'application/json'
-            }
-          });
+        // Check if the user is an admin (you might want to implement a more secure check)
+        if (user.email === 'admin@example.com') {
+          document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
+          document.getElementById('status').style.color = '#4CAF50';
+          
+          // Get user count
+          const usersSnapshot = await getDocs(collection(db, 'users'));
+          const userCount = usersSnapshot.size;
+          document.getElementById('userCount').textContent = `Total users: ${userCount}`;
+          
+          // Subscribe to admin topic
+          const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
+          if (currentToken) {
+            fetch('https://iid.googleapis.com/iid/v1/' + currentToken + '/rel/topics/admin', {
+              method: 'POST',
+              headers: {
+                Authorization: 'key=YOUR_SERVER_KEY',
+                'Content-Type': 'application/json'
+              }
+            });
+          } else {
+            console.log('No registration token available. Request permission to generate one.');
+          }
         } else {
-          console.log('No registration token available. Request permission to generate one.');
+          document.getElementById('status').textContent = 'Access denied. Admin only.';
+          document.getElementById('status').style.color = '#F44336';
         }
-      } else {
-        document.getElementById('status').textContent = 'Access denied. Admin only.';
-        document.getElementById('status').style.color = '#F44336';
       }
     } catch (error) {
       document.getElementById('status').textContent = `Error: ${error.message}`;
       document.getElementById('status').style.color = '#F44336';
     }
   }
+
+  // Check for redirect result when the page loads
+  window.addEventListener('load', async () => {
+    try {
+      const result = await auth.getRedirectResult();
+      if (result.user) {
+        // User is signed in, you can handle this case if needed
+        console.log('User is signed in after redirect');
+      }
+    } catch (error) {
+      console.error('Error after redirect:', error);
+    }
+  });
 </script>
 
 <div class="container">
