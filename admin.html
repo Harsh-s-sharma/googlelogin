@@ -33,12 +33,8 @@
 
     const provider = new GoogleAuthProvider();
     try {
-      // Use signInWithRedirect instead of signInWithPopup
-      await auth.signInWithRedirect(provider);
-      
-      // The sign-in process will redirect. When the user comes back, check the result
-      const result = await getRedirectResult(auth);
-      
+      // Use signInWithPopup
+      const result = await signInWithPopup(auth, provider);
       if (result.user) {
         const user = result.user;
 
@@ -90,7 +86,7 @@
   window.addEventListener('load', async () => {
     try {
       const result = await getRedirectResult(auth);
-      if (result.user) {
+      if (result && result.user) {
         console.log('User is signed in after redirect:', result.user);
       }
     } catch (error) {
