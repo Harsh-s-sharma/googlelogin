@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -154,6 +153,9 @@
             color: white;
             padding: 10px 0;
             text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         #productsContainer {
             display: grid;
@@ -223,20 +225,39 @@
             color: #1890ff;
             text-align: center;
         }
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+            position: fixed;
+            left: 0;
+            bottom: 0;
+            width: 100%;
+            z-index: 1000;
+        }
     </style>
 </head>
 <body>
     <header>
-        <h1>Welcome to the Dashboard</h1>
-        <p>Hello, <span id="userName"></span>!</p>
-        <button onclick="signOut()">Sign Out</button>
+        <nav>
+            <ul>
+                <li><a href="/dashboard">Dashboard</a></li>
+                <li><a href="/add-product">Add Product</a></li>
+                <li><a href="/orders">Orders</a></li>
+            </ul>
+        </nav>
+        <button onclick="signOut()">Logout</button>
     </header>
     <div class="container">
         <h2>Recently Added Product</h2>
         <div id="recentProductContainer"></div>
-        <h2>Available Products</h2>
+        
         <a class='add-product-link' href='/add-product'>Add New Product</a>
         <div id="productsContainer"></div>
     </div>
+    <footer>
+        <p>&copy; 2023 Product Store. All rights reserved.</p>
+    </footer>
 </body>
 </html>
