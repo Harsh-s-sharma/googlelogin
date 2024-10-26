@@ -50,7 +50,7 @@
                 const imageUrl = await getDownloadURL(storageRef);
 
                 // Add product to Firestore
-                await addDoc(collection(db, 'products'), {
+                const docRef = await addDoc(collection(db, 'products'), {
                     name,
                     description,
                     price,
@@ -58,11 +58,13 @@
                     createdAt: new Date()
                 });
 
+                console.log("Document written with ID: ", docRef.id);
+
                 // Redirect to dashboard with success message
                 window.location.href = 'dashboard.html?message=Product uploaded successfully!';
             } catch (error) {
                 console.error('Error uploading product:', error);
-                alert('Failed to upload product. Please try again.');
+                alert('Failed to upload product. Please try again. Error: ' + error.message);
             }
         }
     </script>
