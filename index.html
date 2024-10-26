@@ -3,8 +3,8 @@
   // Import the functions you need from the SDKs you need
   import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
   import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
   // Your web app's Firebase configuration
   // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -39,26 +39,97 @@
     signInWithPopup(auth, provider)
       .then((result) => {
         const user = result.user;
-        // Redirect to dashboard after successful login
-        window.location.href = 'dashboard.html';
+        // Save user session to Firestore
+        saveUserSession(user);
       }).catch((error) => {
         document.getElementById('status').textContent = `Error: ${error.message}`;
         document.getElementById('status').style.color = '#F44336';
       });
   }
 
+  // Function to save user session
+  async function saveUserSession(user) {
+    try {
+      const sessionRef = doc(db, "userSessions", user.uid);
+      const sessionDoc = await getDoc(sessionRef);
+
+      if (sessionDoc.exists()) {
+        // Update existing session
+        await updateDoc(sessionRef, {
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString()
+        });
+      } else {
+        // Create new session
+        await setDoc(sessionRef, {
+          userId: user.uid,
+          email: user.email,
+          lastLogin: new Date().toISOString(),
+          lastActive: new Date().toISOString()
+        });
+      }
+      // Redirect to dashboard after successful login and session save
+      window.location.href = 'dashboard.html';
+    } catch (error) {
+      console.error("Error saving user session: ", error);
+      document.getElementById('status').textContent = `Error: Unable to save session`;
+      document.getElementById('status').style.color = '#F44336';
+    }
+  }
+
   // Function to handle Sign Out
-  window.handleSignOut = function() {
-    auth.signOut().then(() => {
+  window.handleSignOut = async function() {
+    try {
+      const user = auth.currentUser;
+      if (user) {
+        const sessionRef = doc(db, "userSessions", user.uid);
+        await updateDoc(sessionRef, {
+          lastActive: new Date().toISOString()
+        });
+      }
+      await auth.signOut();
       document.getElementById('status').textContent = 'You have been signed out.';
       document.getElementById('status').style.color = '#2196F3';
       document.getElementById('loginContainer').style.display = 'flex';
       document.getElementById('userContainer').style.display = 'none';
-    }).catch((error) => {
+    } catch (error) {
       document.getElementById('status').textContent = `Error: ${error.message}`;
       document.getElementById('status').style.color = '#F44336';
-    });
+    }
   }
+
+  // Function to update session
+  async function updateSession(user) {
+    try {
+      const sessionRef = doc(db, "userSessions", user.uid);
+      await updateDoc(sessionRef, {
+        lastActive: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error("Error updating session: ", error);
+    }
+  }
+
+  // Check auth state on page load
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      // User is signed in, update session and redirect to dashboard
+      await updateSession(user);
+      window.location.href = 'dashboard.html';
+    } else {
+      // User is signed out
+      document.getElementById('loginContainer').style.display = 'flex';
+      document.getElementById('userContainer').style.display = 'none';
+    }
+  });
+
+  // Set up an interval to update the session every 5 minutes if the user is active
+  setInterval(async () => {
+    const user = auth.currentUser;
+    if (user) {
+      await updateSession(user);
+    }
+  }, 5 * 60 * 1000);
 </script>
 
 <style>

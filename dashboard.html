@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -23,14 +23,36 @@
         const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 document.getElementById('userName').textContent = user.displayName;
+                await updateUserSession(user);
                 loadProducts();
             } else {
                 window.location.href = 'index.html';
             }
         });
+
+        async function updateUserSession(user) {
+            const sessionRef = doc(db, "userSessions", user.uid);
+            try {
+                const sessionDoc = await getDoc(sessionRef);
+                if (sessionDoc.exists()) {
+                    await setDoc(sessionRef, {
+                        lastActive: new Date().toISOString()
+                    }, { merge: true });
+                } else {
+                    await setDoc(sessionRef, {
+                        userId: user.uid,
+                        email: user.email,
+                        lastLogin: new Date().toISOString(),
+                        lastActive: new Date().toISOString()
+                    });
+                }
+            } catch (error) {
+                console.error("Error updating user session: ", error);
+            }
+        }
 
         async function loadProducts() {
             const productsContainer = document.getElementById('productsContainer');
@@ -57,19 +79,29 @@
                     timestamp: new Date()
                 });
                 alert('Product purchased successfully!');
+                await updateUserSession(auth.currentUser);
             } catch (error) {
                 console.error('Error buying product:', error);
                 alert('Failed to purchase product. Please try again.');
             }
         }
 
-        window.signOut = function() {
-            auth.signOut().then(() => {
+        window.signOut = async function() {
+            try {
+                await updateUserSession(auth.currentUser);
+                await auth.signOut();
                 window.location.href = 'index.html';
-            }).catch((error) => {
+            } catch (error) {
                 console.error('Sign out error:', error);
-            });
+            }
         }
+
+        // Set up an interval to update the session every 5 minutes
+        setInterval(async () => {
+            if (auth.currentUser) {
+                await updateUserSession(auth.currentUser);
+            }
+        }, 5 * 60 * 1000);
     </script>
     <style>
         body {
