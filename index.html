@@ -47,11 +47,16 @@
       });
   }
 
-  // Function to handle Phone Number Sign-In
+  // Function to handle Phone Number Sign-In with OTP
   window.handlePhoneNumberSignIn = function() {
-    const phoneNumber = document.getElementById('phoneNumber').value;
-    const appVerifier = window.recaptchaVerifier;
-    signInWithPhoneNumber(auth, phoneNumber, appVerifier)
+    let phoneNumber = document.getElementById('phoneNumber').value;
+    if (phoneNumber && phoneNumber.length === 10) {
+      phoneNumber = '+91' + phoneNumber;
+    }
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
+    }
+    signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
       .then((confirmationResult) => {
         // SMS sent. Prompt user to type the verification code right away.
         const verificationCode = prompt('Please enter the verification code that was sent to your phone.');
