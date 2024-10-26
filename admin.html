@@ -1,0 +1,78 @@
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+  import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
+
+  // Your web app's Firebase configuration
+  const firebaseConfig = {
+    apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
+    authDomain: "login-e8086.firebaseapp.com",
+    projectId: "login-e8086",
+    storageBucket: "login-e8086.appspot.com",
+    messagingSenderId: "13482086131",
+    appId: "1:13482086131:web:31e8aad8911580e0083186",
+    measurementId: "G-8VQ8ME6J88"
+  };
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+  const messaging = getMessaging(app);
+
+  // Function to handle admin login and user count
+  window.handleAdminLogin = async function() {
+    const password = prompt("Please enter the admin password:");
+    if (password !== "admin123") { // Replace with a secure password
+      document.getElementById('status').textContent = 'Incorrect password. Access denied.';
+      document.getElementById('status').style.color = '#F44336';
+      return;
+    }
+
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      
+      // Check if the user is an admin (you might want to implement a more secure check)
+      if (user.email === 'admin@example.com') {
+        document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
+        document.getElementById('status').style.color = '#4CAF50';
+        
+        // Get user count
+        const usersSnapshot = await getDocs(collection(db, 'users'));
+        const userCount = usersSnapshot.size;
+        document.getElementById('userCount').textContent = `Total users: ${userCount}`;
+        
+        // Subscribe to admin topic
+        const currentToken = await getToken(messaging, { vapidKey: 'YOUR_PUBLIC_VAPID_KEY' });
+        if (currentToken) {
+          fetch('https://iid.googleapis.com/iid/v1/' + currentToken + '/rel/topics/admin', {
+            method: 'POST',
+            headers: {
+              Authorization: 'key=YOUR_SERVER_KEY',
+              'Content-Type': 'application/json'
+            }
+          });
+        } else {
+          console.log('No registration token available. Request permission to generate one.');
+        }
+      } else {
+        document.getElementById('status').textContent = 'Access denied. Admin only.';
+        document.getElementById('status').style.color = '#F44336';
+      }
+    } catch (error) {
+      document.getElementById('status').textContent = `Error: ${error.message}`;
+      document.getElementById('status').style.color = '#F44336';
+    }
+  }
+</script>
+
+<div class="container">
+  <h1>Admin Panel</h1>
+  <button id="adminLoginBtn" onclick="handleAdminLogin()">Admin Login</button>
+  <div id="status"></div>
+  <div id="userCount"></div>
+</div>
