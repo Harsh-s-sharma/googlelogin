@@ -47,10 +47,19 @@
           document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
           document.getElementById('status').style.color = '#4CAF50';
           
-          // Get user count
+          // Get all users
           const usersSnapshot = await getDocs(collection(db, 'users'));
-          const userCount = usersSnapshot.size;
-          document.getElementById('userCount').textContent = `Total users: ${userCount}`;
+          const usersList = usersSnapshot.docs.map(doc => doc.data());
+          document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
+          
+          // Display all users
+          const usersDisplay = document.getElementById('usersDisplay');
+          usersDisplay.innerHTML = '';
+          usersList.forEach(user => {
+            const userElement = document.createElement('div');
+            userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
+            usersDisplay.appendChild(userElement);
+          });
           
           // Subscribe to admin topic
           const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
@@ -95,4 +104,5 @@
   <button id="adminLoginBtn" onclick="handleAdminLogin()">Admin Login</button>
   <div id="status"></div>
   <div id="userCount"></div>
+  <div id="usersDisplay"></div>
 </div>
