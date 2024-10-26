@@ -99,10 +99,61 @@
   });
 </script>
 
+<style>
+  .container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .admin-login-btn {
+    background-color: #4CAF50;
+    color: #fff;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+
+  .admin-login-btn:hover {
+    background-color: #3e8e41;
+  }
+
+  .status-message {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+
+  .user-count {
+    font-size: 16px;
+    margin-bottom: 20px;
+  }
+
+  .users-display {
+    margin-top: 20px;
+  }
+
+  .users-display div {
+    background-color: #f9f9f9;
+    padding: 10px;
+    border-bottom: 1px solid #ddd;
+  }
+
+  .users-display div:last-child {
+    border-bottom: none;
+  }
+</style>
+
 <div class="container">
   <h1>Admin Panel</h1>
-  <button id="adminLoginBtn" onclick="handleAdminLogin()">Admin Login</button>
-  <div id="status"></div>
-  <div id="userCount"></div>
-  <div id="usersDisplay"></div>
+  <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
+  <div id="status" class="status-message"></div>
+  <div id="userCount" class="user-count"></div>
+  <div id="usersDisplay" class="users-display"></div>
 </div>
