@@ -1,155 +1,155 @@
 <!-- Firebase SDK -->
 <script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-  import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
-
-  // Your web app's Firebase configuration
-  const firebaseConfig = {
-    apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
-    authDomain: "login-e8086.firebaseapp.com",
-    projectId: "login-e8086",
-    storageBucket: "login-e8086.appspot.com",
-    messagingSenderId: "13482086131",
-    appId: "1:13482086131:web:31e8aad8911580e0083186",
-    measurementId: "G-8VQ8ME6J88"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const auth = getAuth(app);
-  const db = getFirestore(app);
-  const messaging = getMessaging(app);
-
-  // Function to handle admin login and user count
-  window.handleAdminLogin = async function() {
-    const password = prompt("Please enter the admin password:");
-    if (password !== "admin123") { // Replace with a secure password
-      document.getElementById('status').textContent = 'Incorrect password. Access denied.';
-      document.getElementById('status').style.color = '#F44336';
-      return;
-    }
-
-    const provider = new GoogleAuthProvider();
-    try {
-      // Use signInWithPopup
-      const result = await signInWithPopup(auth, provider);
-      if (result.user) {
-        const user = result.user;
-
-        // Check if the user is an admin
-        if (user.email === 'admin@example.com') {
-          document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
-          document.getElementById('status').style.color = '#4CAF50';
-          
-          // Get all users
-          const usersSnapshot = await getDocs(collection(db, 'users'));
-          const usersList = usersSnapshot.docs.map(doc => doc.data());
-          document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
-          
-          // Display all users
-          const usersDisplay = document.getElementById('usersDisplay');
-          usersDisplay.innerHTML = '';
-          usersList.forEach(user => {
-            const userElement = document.createElement('div');
-            userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
-            usersDisplay.appendChild(userElement);
-          });
-          
-          // Subscribe to admin topic
-          const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
-          if (currentToken) {
-            await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
-              method: 'POST',
-              headers: {
-                Authorization: 'key=YOUR_SERVER_KEY', // Use your actual server key here
-                'Content-Type': 'application/json'
-              }
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, signInWithPopup, GoogleAuthProvider, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
+  
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
+      authDomain: "login-e8086.firebaseapp.com",
+      projectId: "login-e8086",
+      storageBucket: "login-e8086.appspot.com",
+      messagingSenderId: "13482086131",
+      appId: "1:13482086131:web:31e8aad8911580e0083186",
+      measurementId: "G-8VQ8ME6J88"
+    };
+  
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const messaging = getMessaging(app);
+  
+    // Function to handle admin login and user count
+    window.handleAdminLogin = async function() {
+      const password = prompt("Please enter the admin password:");
+      if (password !== "harsh.sharma.sunil@gmail.com") { // Replace with a secure password
+        document.getElementById('status').textContent = 'Incorrect password. Access denied.';
+        document.getElementById('status').style.color = '#F44336';
+        return;
+      }
+  
+      const provider = new GoogleAuthProvider();
+      try {
+        // Use signInWithPopup
+        const result = await signInWithPopup(auth, provider);
+        if (result.user) {
+          const user = result.user;
+  
+          // Check if the user is an admin
+          if (user.email === 'harsh.sharma.sunil@gmail.com') {
+            document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
+            document.getElementById('status').style.color = '#4CAF50';
+            
+            // Get all users
+            const usersSnapshot = await getDocs(collection(db, 'users'));
+            const usersList = usersSnapshot.docs.map(doc => doc.data());
+            document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
+            
+            // Display all users
+            const usersDisplay = document.getElementById('usersDisplay');
+            usersDisplay.innerHTML = '';
+            usersList.forEach(user => {
+              const userElement = document.createElement('div');
+              userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
+              usersDisplay.appendChild(userElement);
             });
+            
+            // Subscribe to admin topic
+            const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
+            if (currentToken) {
+              await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
+                method: 'POST',
+                headers: {
+                  Authorization: 'key=YOUR_SERVER_KEY', // Use your actual server key here
+                  'Content-Type': 'application/json'
+                }
+              });
+            } else {
+              console.log('No registration token available. Request permission to generate one.');
+            }
           } else {
-            console.log('No registration token available. Request permission to generate one.');
+            document.getElementById('status').textContent = 'Access denied. Admin only.';
+            document.getElementById('status').style.color = '#F44336';
           }
-        } else {
-          document.getElementById('status').textContent = 'Access denied. Admin only.';
-          document.getElementById('status').style.color = '#F44336';
         }
+      } catch (error) {
+        document.getElementById('status').textContent = `Error: ${error.message}`;
+        document.getElementById('status').style.color = '#F44336';
+        console.error('Admin login error:', error);
       }
-    } catch (error) {
-      document.getElementById('status').textContent = `Error: ${error.message}`;
-      document.getElementById('status').style.color = '#F44336';
-      console.error('Admin login error:', error);
     }
-  }
-
-  // Check for redirect result when the page loads
-  window.addEventListener('load', async () => {
-    try {
-      const result = await getRedirectResult(auth);
-      if (result && result.user) {
-        console.log('User is signed in after redirect:', result.user);
+  
+    // Check for redirect result when the page loads
+    window.addEventListener('load', async () => {
+      try {
+        const result = await getRedirectResult(auth);
+        if (result && result.user) {
+          console.log('User is signed in after redirect:', result.user);
+        }
+      } catch (error) {
+        console.error('Error after redirect:', error);
       }
-    } catch (error) {
-      console.error('Error after redirect:', error);
+    });
+  </script>
+  
+  <style>
+    .container {
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
     }
-  });
-</script>
-
-<style>
-  .container {
-    max-width: 800px;
-    margin: 40px auto;
-    padding: 20px;
-    background-color: #f9f9f9;
-    border: 1px solid #ddd;
-    border-radius: 10px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  }
-
-  .admin-login-btn {
-    background-color: #4CAF50;
-    color: #fff;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-
-  .admin-login-btn:hover {
-    background-color: #3e8e41;
-  }
-
-  .status-message {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-
-  .user-count {
-    font-size: 16px;
-    margin-bottom: 20px;
-  }
-
-  .users-display {
-    margin-top: 20px;
-  }
-
-  .users-display div {
-    background-color: #f9f9f9;
-    padding: 10px;
-    border-bottom: 1px solid #ddd;
-  }
-
-  .users-display div:last-child {
-    border-bottom: none;
-  }
-</style>
-
-<div class="container">
-  <h1>Admin Panel</h1>
-  <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
-  <div id="status" class="status-message"></div>
-  <div id="userCount" class="user-count"></div>
-  <div id="usersDisplay" class="users-display"></div>
-</div>
+  
+    .admin-login-btn {
+      background-color: #4CAF50;
+      color: #fff;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+  
+    .admin-login-btn:hover {
+      background-color: #3e8e41;
+    }
+  
+    .status-message {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+  
+    .user-count {
+      font-size: 16px;
+      margin-bottom: 20px;
+    }
+  
+    .users-display {
+      margin-top: 20px;
+    }
+  
+    .users-display div {
+      background-color: #f9f9f9;
+      padding: 10px;
+      border-bottom: 1px solid #ddd;
+    }
+  
+    .users-display div:last-child {
+      border-bottom: none;
+    }
+  </style>
+  
+  <div class="container">
+    <h1>Admin Panel</h1>
+    <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
+    <div id="status" class="status-message"></div>
+    <div id="userCount" class="user-count"></div>
+    <div id="usersDisplay" class="users-display"></div>
+  </div>
