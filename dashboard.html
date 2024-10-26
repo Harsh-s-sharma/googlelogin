@@ -7,11 +7,12 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getDatabase, ref, set, get, push, query, orderByChild, limitToLast } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
             authDomain: "login-e8086.firebaseapp.com",
+            databaseURL: "https://login-e8086-default-rtdb.firebaseio.com",
             projectId: "login-e8086",
             storageBucket: "login-e8086.appspot.com",
             messagingSenderId: "13482086131",
@@ -21,7 +22,7 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
+        const db = getDatabase(app);
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -35,15 +36,15 @@
         });
 
         async function updateUserSession(user) {
-            const sessionRef = doc(db, "userSessions", user.uid);
+            const sessionRef = ref(db, `userSessions/${user.uid}`);
             try {
-                const sessionDoc = await getDoc(sessionRef);
-                if (sessionDoc.exists()) {
-                    await setDoc(sessionRef, {
+                const snapshot = await get(sessionRef);
+                if (snapshot.exists()) {
+                    await set(sessionRef, {
                         lastActive: new Date().toISOString()
                     }, { merge: true });
                 } else {
-                    await setDoc(sessionRef, {
+                    await set(sessionRef, {
                         userId: user.uid,
                         email: user.email,
                         lastLogin: new Date().toISOString(),
@@ -58,51 +59,57 @@
         async function loadProducts() {
             const productsContainer = document.getElementById('productsContainer');
             productsContainer.innerHTML = ''; // Clear existing products
-            const productsSnapshot = await getDocs(collection(db, 'products'));
-            productsSnapshot.forEach((doc) => {
-                const product = doc.data();
-                const productElement = document.createElement('div');
-                productElement.className = 'product';
-                productElement.innerHTML = `
-                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
-                    <h3>${product.name}</h3>
-                    <p>${product.description}</p>
-                    <p class="price">Price: $${product.price.toFixed(2)}</p>
-                    <button onclick="buyProduct('${doc.id}')">Buy Now</button>
-                `;
-                productsContainer.appendChild(productElement);
-            });
+            const productsRef = ref(db, 'products');
+            const snapshot = await get(productsRef);
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    const product = childSnapshot.val();
+                    const productElement = document.createElement('div');
+                    productElement.className = 'product';
+                    productElement.innerHTML = `
+                        <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                        <h3>${product.name}</h3>
+                        <p>${product.description}</p>
+                        <p class="price">Price: $${parseFloat(product.price).toFixed(2)}</p>
+                        <button onclick="buyProduct('${childSnapshot.key}')">Buy Now</button>
+                    `;
+                    productsContainer.appendChild(productElement);
+                });
+            }
         }
 
         async function loadRecentlyAddedProduct() {
             const recentProductContainer = document.getElementById('recentProductContainer');
             recentProductContainer.innerHTML = ''; // Clear existing content
             
-            const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
-            const querySnapshot = await getDocs(q);
+            const recentProductQuery = query(ref(db, 'products'), orderByChild('createdAt'), limitToLast(1));
+            const snapshot = await get(recentProductQuery);
             
-            querySnapshot.forEach((doc) => {
-                const product = doc.data();
-                const productElement = document.createElement('div');
-                productElement.className = 'product recent-product';
-                productElement.innerHTML = `
-                    <h3>Recently Added Product</h3>
-                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
-                    <h4>${product.name}</h4>
-                    <p>${product.description}</p>
-                    <p class="price">Price: $${product.price.toFixed(2)}</p>
-                    <button onclick="buyProduct('${doc.id}')">Buy Now</button>
-                `;
-                recentProductContainer.appendChild(productElement);
-            });
+            if (snapshot.exists()) {
+                snapshot.forEach((childSnapshot) => {
+                    const product = childSnapshot.val();
+                    const productElement = document.createElement('div');
+                    productElement.className = 'product recent-product';
+                    productElement.innerHTML = `
+                        <h3>Recently Added Product</h3>
+                        <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                        <h4>${product.name}</h4>
+                        <p>${product.description}</p>
+                        <p class="price">Price: $${parseFloat(product.price).toFixed(2)}</p>
+                        <button onclick="buyProduct('${childSnapshot.key}')">Buy Now</button>
+                    `;
+                    recentProductContainer.appendChild(productElement);
+                });
+            }
         }
 
         window.buyProduct = async function(productId) {
             try {
-                await addDoc(collection(db, 'orders'), {
+                const ordersRef = ref(db, 'orders');
+                await push(ordersRef, {
                     userId: auth.currentUser.uid,
                     productId: productId,
-                    timestamp: new Date()
+                    timestamp: new Date().toISOString()
                 });
                 alert('Product purchased successfully!');
                 await updateUserSession(auth.currentUser);
