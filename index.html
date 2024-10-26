@@ -38,52 +38,119 @@
     });
     signInWithPopup(auth, provider)
       .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
-        // The signed-in user info.
         const user = result.user;
-        // Show success message
-        document.getElementById('status').textContent = `Signed in as ${user.displayName}`;
-        document.getElementById('status').style.color = 'green';
-        document.getElementById('googleSignInBtn').style.display = 'none';
-        document.getElementById('signOutBtn').style.display = 'block';
+        document.getElementById('status').textContent = `Welcome, ${user.displayName}!`;
+        document.getElementById('status').style.color = '#4CAF50';
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('userContainer').style.display = 'block';
+        document.getElementById('userAvatar').src = user.photoURL;
+        document.getElementById('userName').textContent = user.displayName;
       }).catch((error) => {
-        // Handle Errors here.
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // Show error message
-        document.getElementById('status').textContent = `Error: ${errorMessage}`;
-        document.getElementById('status').style.color = 'red';
+        document.getElementById('status').textContent = `Error: ${error.message}`;
+        document.getElementById('status').style.color = '#F44336';
       });
   }
 
   // Function to handle Sign Out
   window.handleSignOut = function() {
     auth.signOut().then(() => {
-      // Sign-out successful.
-      document.getElementById('status').textContent = 'Signed out successfully';
-      document.getElementById('status').style.color = 'blue';
-      document.getElementById('googleSignInBtn').style.display = 'block';
-      document.getElementById('signOutBtn').style.display = 'none';
+      document.getElementById('status').textContent = 'You have been signed out.';
+      document.getElementById('status').style.color = '#2196F3';
+      document.getElementById('loginContainer').style.display = 'flex';
+      document.getElementById('userContainer').style.display = 'none';
     }).catch((error) => {
-      // An error happened.
       document.getElementById('status').textContent = `Error: ${error.message}`;
-      document.getElementById('status').style.color = 'red';
+      document.getElementById('status').style.color = '#F44336';
     });
   }
 </script>
 
-<!-- Google Sign-In button -->
-<button id="googleSignInBtn" onclick="handleGoogleSignIn()" style="background-color: #4285F4; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
-  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; vertical-align: middle; margin-right: 10px;">
-  Sign in with Google
-</button>
+<style>
+  body {
+    font-family: 'Roboto', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f5f5f5;
+  }
+  .container {
+    background-color: white;
+    padding: 40px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  h1 {
+    color: #333;
+    margin-bottom: 30px;
+  }
+  #googleSignInBtn {
+    background-color: #4285F4;
+    color: white;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.3s;
+  }
+  #googleSignInBtn:hover {
+    background-color: #357ae8;
+  }
+  #googleSignInBtn img {
+    width: 18px;
+    margin-right: 10px;
+  }
+  #userContainer {
+    display: none;
+  }
+  #userAvatar {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    margin-bottom: 15px;
+  }
+  #userName {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+  }
+  #signOutBtn {
+    background-color: #f44336;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background-color 0.3s;
+  }
+  #signOutBtn:hover {
+    background-color: #d32f2f;
+  }
+  #status {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+</style>
 
-<!-- Sign Out button (initially hidden) -->
-<button id="signOutBtn" onclick="handleSignOut()" style="display: none; background-color: #f44336; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer;">
-  Sign Out
-</button>
-
-<!-- Status message element -->
-<div id="status" style="margin-top: 20px; font-weight: bold;"></div>
+<div class="container">
+  <h1>Welcome</h1>
+  <div id="loginContainer">
+    <button id="googleSignInBtn" onclick="handleGoogleSignIn()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
+      Sign in with Google
+    </button>
+  </div>
+  <div id="userContainer">
+    <img id="userAvatar" alt="User Avatar">
+    <div id="userName"></div>
+    <button id="signOutBtn" onclick="handleSignOut()">Sign Out</button>
+  </div>
+  <div id="status"></div>
+</div>
