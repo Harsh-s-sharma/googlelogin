@@ -29,7 +29,7 @@
                 await updateUserSession(user);
                 loadProducts();
                 loadRecentlyAddedProduct();
-                loadBlogs(); // Added to load blogs
+                loadBlogs();
             } else {
                 window.location.href = 'index.html';
             }
@@ -58,19 +58,18 @@
 
         async function loadProducts() {
             const productsContainer = document.getElementById('productsContainer');
-            productsContainer.innerHTML = ''; // Clear existing products
+            productsContainer.innerHTML = '';
             const productsSnapshot = await getDocs(collection(db, 'products'));
             productsSnapshot.forEach((doc) => {
                 const product = doc.data();
                 const productElement = document.createElement('div');
                 productElement.className = 'product';
                 productElement.innerHTML = `
-                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                     <h3>${product.name}</h3>
                     <p>${product.description}</p>
                     <p class="price">Price: $${product.price.toFixed(2)}</p>
                     <p class="in-stock">In Stock: ${product.inStock}</p>
-                    <p class="tags">Tags: ${product.tags}</p>
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                 `;
                 productsContainer.appendChild(productElement);
@@ -79,23 +78,20 @@
 
         async function loadRecentlyAddedProduct() {
             const recentProductContainer = document.getElementById('recentProductContainer');
-            recentProductContainer.innerHTML = ''; // Clear existing content
-            
+            recentProductContainer.innerHTML = '';
             const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
             const querySnapshot = await getDocs(q);
-            
             querySnapshot.forEach((doc) => {
                 const product = doc.data();
                 const productElement = document.createElement('div');
                 productElement.className = 'product recent-product';
                 productElement.innerHTML = `
                     <h3>Recently Added Product</h3>
-                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image">
+                    <img src="${product.imageUrl || 'placeholder.jpg'}" alt="${product.name}" class="product-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                     <h4>${product.name}</h4>
                     <p>${product.description}</p>
                     <p class="price">Price: $${product.price.toFixed(2)}</p>
                     <p class="in-stock">In Stock: ${product.inStock}</p>
-                    <p class="tags">Tags: ${product.tags}</p>
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                 `;
                 recentProductContainer.appendChild(productElement);
@@ -104,14 +100,15 @@
 
         async function loadBlogs() {
             const blogsContainer = document.getElementById('blogsContainer');
-            blogsContainer.innerHTML = ''; // Clear existing blogs
+            blogsContainer.innerHTML = '';
             const blogsSnapshot = await getDocs(collection(db, 'blogs'));
             blogsSnapshot.forEach((doc) => {
                 const blog = doc.data();
                 const blogElement = document.createElement('div');
-                blogElement.className = 'blog';
+                blogElement.className = 'blog-card';
                 blogElement.innerHTML = `
                     <h3>${blog.title}</h3>
+                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                     <p>${blog.description}</p>
                     <button onclick="openBlogPopup('${doc.id}')">Read More</button>
                 `;
@@ -130,7 +127,7 @@
                     <div class="popup-content">
                         <h2>${blog.title}</h2>
                         <p>${blog.content}</p>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image">
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                         <button onclick="closePopup()">Close</button>
                     </div>
                 `;
@@ -153,7 +150,6 @@
                 });
                 alert('Product purchased successfully!');
                 await updateUserSession(auth.currentUser);
-                // Add product to cart
                 await addDoc(collection(db, 'cart'), {
                     userId: auth.currentUser.uid,
                     productId: productId,
@@ -176,13 +172,13 @@
             }
         }
 
-        // Set up an interval to update the session every 5 minutes
         setInterval(async () => {
             if (auth.currentUser) {
                 await updateUserSession(auth.currentUser);
             }
         }, 5 * 60 * 1000);
     </script>
+   
     <style>
         body {
             font-family: 'Arial', sans-serif;
