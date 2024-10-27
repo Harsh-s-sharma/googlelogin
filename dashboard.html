@@ -106,6 +106,13 @@
                 });
                 alert('Product purchased successfully!');
                 await updateUserSession(auth.currentUser);
+                // Add product to cart
+                await addDoc(collection(db, 'cart'), {
+                    userId: auth.currentUser.uid,
+                    productId: productId,
+                    timestamp: new Date()
+                });
+                alert('Product added to cart successfully!');
             } catch (error) {
                 console.error('Error buying product:', error);
                 alert('Failed to purchase product. Please try again.');
@@ -245,6 +252,28 @@
         .recent-product:hover {
             box-shadow: 0 6px 20px rgba(0,0,0,0.19);
         }
+        .cart-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+        .cart-icon:hover {
+            background-color: #45a049;
+        }
     </style>
 </head>
 <body>
@@ -267,5 +296,31 @@
      
         <div id="productsContainer"></div>
     </div>
+    <button class="cart-icon" onclick="openCart()">🛒</button>
+    <div id="cart" style="display: none;">
+        <h2>Cart</h2>
+        <div id="cartItems"></div>
+    </div>
+    <script>
+        function openCart() {
+            document.getElementById('cart').style.display = 'block';
+            loadCartItems();
+        }
+        async function loadCartItems() {
+            const cartItemsContainer = document.getElementById('cartItems');
+            cartItemsContainer.innerHTML = ''; // Clear existing cart items
+            const cartItemsSnapshot = await getDocs(collection(db, 'cart'));
+            cartItemsSnapshot.forEach((doc) => {
+                const cartItem = doc.data();
+                const cartItemElement = document.createElement('div');
+                cartItemElement.className = 'cart-item';
+                cartItemElement.innerHTML = `
+                    <h3>${cartItem.productId}</h3>
+                    <p>${cartItem.timestamp.toDate().toLocaleString()}</p>
+                `;
+                cartItemsContainer.appendChild(cartItemElement);
+            });
+        }
+    </script>
 </body>
 </html>
