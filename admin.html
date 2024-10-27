@@ -41,6 +41,8 @@
             document.getElementById('status').style.color = '#4CAF50';
             document.getElementById('adminPanel').style.display = 'block';
             document.getElementById('adminLoginBtn').style.display = 'none';
+            // Only show add product details if logged in
+            document.getElementById('addProductDetails').style.display = 'block';
             displayProducts();
             displayBlogs();
             // Show logout button
@@ -52,8 +54,9 @@
             document.getElementById('adminLoginBtn').style.display = 'block';
             document.getElementById('status').textContent = 'Please log in to access the admin panel.';
             document.getElementById('status').style.color = '#F44336';
-            // Hide logout button
+            // Hide logout button and add product details
             document.getElementById('logoutBtn').style.display = 'none';
+            document.getElementById('addProductDetails').style.display = 'none';
         }
 
         // Handle Admin Login
@@ -205,8 +208,11 @@
         <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
         <button id="logoutBtn" onclick="logout()" class="admin-login-btn" style="display: none;">Logout</button>
         <div id="status" class="status-message"></div>
-        <div id="adminPanel" class="admin-panel" style="display": none;">
+        <div id="adminPanel" class="admin-panel" style="display: none;">
             <!-- Admin Panel Content -->
+            <div id="addProductDetails" style="display: none;">
+                <!-- Add Product Details Form -->
+            </div>
         </div>
     </div>
 </body>
