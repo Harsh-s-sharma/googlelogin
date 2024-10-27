@@ -11,7 +11,7 @@
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         // Firebase configuration (Replace with your Firebase config)
-        const firebaseConfig = {
+   const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
             authDomain: "login-e8086.firebaseapp.com",
             projectId: "login-e8086",
@@ -29,7 +29,7 @@
 
         // Authentication and User Access Control
         onAuthStateChanged(auth, user => {
-            if (user && user.email === 'harsh.sharma.sunil@gmail.com') {
+            if (user && user.email === 'YOUR_ADMIN_EMAIL@example.com') {
                 showAdminPanel(user);
             } else {
                 showLogin();
@@ -43,8 +43,6 @@
             document.getElementById('adminLoginBtn').style.display = 'none';
             displayProducts();
             displayBlogs();
-            // Show logout button
-            document.getElementById('logoutBtn').style.display = 'block';
         }
 
         function showLogin() {
@@ -52,8 +50,6 @@
             document.getElementById('adminLoginBtn').style.display = 'block';
             document.getElementById('status').textContent = 'Please log in to access the admin panel.';
             document.getElementById('status').style.color = '#F44336';
-            // Hide logout button
-            document.getElementById('logoutBtn').style.display = 'none';
         }
 
         // Handle Admin Login
@@ -69,7 +65,7 @@
 
         window.logout = async function() {
             await signOut(auth);
-            window.location.href = 'admin.html'; // Redirect to admin page
+            showLogin();
         }
 
         // Add Product
@@ -127,85 +123,14 @@
     </script>
     <style>
         /* Add the styles you provided */
-    body {
-        font-family: Arial, sans-serif;
-        margin: 0;
-        padding: 0;
-        background-color: #f4f4f4;
-    }
-
-    .container {
-        max-width: 800px;
-        margin: auto;
-        padding: 20px;
-        background-color: #fff;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-
-    h1 {
-        color: #333;
-        margin-bottom: 20px;
-    }
-
-    .admin-login-btn {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 20px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 16px;
-        transition: background-color 0.3s;
-    }
-
-    .admin-login-btn:hover {
-        background-color: #45a049;
-    }
-
-    .status-message {
-        margin-top: 20px;
-        font-weight: bold;
-        color: #4CAF50;
-    }
-
-    .admin-panel {
-        display: none;
-    }
-
-    #productsDisplay {
-        margin-top: 20px;
-    }
-
-    #productsDisplay div {
-        margin-bottom: 10px;
-        padding: 10px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-    }
-
-    #productsDisplay div button {
-        background-color: #007bff;
-        color: white;
-        padding: 5px 10px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 14px;
-        transition: background-color 0.3s;
-    }
-
-    #productsDisplay div button:hover {
-        background-color: #0056b3;
-    }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Admin Panel</h1>
         <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
-        <button id="logoutBtn" onclick="logout()" class="admin-login-btn" style="display: none;">Logout</button>
         <div id="status" class="status-message"></div>
-        <div id="adminPanel" class="admin-panel" style="display": none;">
+        <div id="adminPanel" class="admin-panel" style="display: none;">
             <!-- Admin Panel Content -->
         </div>
     </div>
