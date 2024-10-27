@@ -130,6 +130,7 @@
                     <div class="popup-content">
                         <h2>${blog.title}</h2>
                         <p>${blog.content}</p>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image">
                         <button onclick="closePopup()">Close</button>
                     </div>
                 `;
@@ -342,6 +343,13 @@
         .popup-content {
             max-width: 600px;
             margin: auto;
+        }
+        .popup-image {
+            width: 100%;
+            height: auto;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 10px;
         }
     </style>
 </head>
