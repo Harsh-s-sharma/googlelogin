@@ -6,12 +6,10 @@
     <title>Admin Panel</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
-        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
             authDomain: "login-e8086.firebaseapp.com",
@@ -22,78 +20,51 @@
             measurementId: "G-8VQ8ME6J88"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const messaging = getMessaging(app);
         const storage = getStorage(app);
 
-        // Function to handle admin login and user count
-        window.handleAdminLogin = async function() {
-            const password = prompt("Please enter the admin password:");
-            if (password !== "admin123") {
-                document.getElementById('status').textContent = 'Incorrect password. Access denied.';
-                document.getElementById('status').style.color = '#F44336';
-                return;
+        // Listen for auth state changes
+        onAuthStateChanged(auth, user => {
+            if (user && user.email === 'harsh.sharma.sunil@gmail.com') {
+                showAdminPanel(user);
+            } else {
+                showLogin();
             }
+        });
 
+        function showAdminPanel(user) {
+            document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
+            document.getElementById('status').style.color = '#4CAF50';
+            document.getElementById('adminPanel').style.display = 'block';
+            document.getElementById('adminLoginBtn').style.display = 'none';
+            displayProducts();
+            displayBlogs();
+        }
+
+        function showLogin() {
+            document.getElementById('adminPanel').style.display = 'none';
+            document.getElementById('adminLoginBtn').style.display = 'block';
+            document.getElementById('status').textContent = 'Please log in to access the admin panel.';
+            document.getElementById('status').style.color = '#F44336';
+        }
+
+        window.handleAdminLogin = async function() {
             const provider = new GoogleAuthProvider();
             try {
-                const result = await signInWithPopup(auth, provider);
-                if (result.user) {
-                    const user = result.user;
-
-                    // Check if the user is an admin
-                    if (user.email === 'harsh.sharma.sunil@gmail.com') {
-                        document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
-                        document.getElementById('status').style.color = '#4CAF50';
-                        
-                        // Hide login button and show logout button
-                        document.getElementById('adminLoginBtn').style.display = 'none';
-                        document.getElementById('logoutBtn').style.display = 'block';
-
-                        // Show add product and blog sections
-                        document.getElementById('addProductSection').style.display = 'block';
-                        document.getElementById('addBlogSection').style.display = 'block'; // Added to show blog section
-
-                        // Get all users
-                        const usersSnapshot = await getDocs(collection(db, 'users'));
-                        const usersList = usersSnapshot.docs.map(doc => doc.data());
-                        document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
-                        
-                        // Display all users
-                        const usersDisplay = document.getElementById('usersDisplay');
-                        usersDisplay.innerHTML = '';
-                        usersList.forEach(user => {
-                            const userElement = document.createElement('div');
-                            userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
-                            usersDisplay.appendChild(userElement);
-                        });
-                        
-                        // Subscribe to admin topic
-                        const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
-                        if (currentToken) {
-                            await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
-                                method: 'POST',
-                                headers: {
-                                    Authorization: 'key=BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I', // Use your actual server key here
-                                    'Content-Type': 'application/json'
-                                }
-                            });
-                        }
-                    } else {
-                        document.getElementById('status').textContent = 'Access denied. Admin only.';
-                        document.getElementById('status').style.color = '#F44336';
-                    }
-                }
+                await signInWithPopup(auth, provider);
             } catch (error) {
                 document.getElementById('status').textContent = `Error: ${error.message}`;
                 document.getElementById('status').style.color = '#F44336';
             }
         }
 
-        // Function to add a product
+        window.logout = async function() {
+            await signOut(auth);
+        }
+
+        // Add Product
         window.addProduct = async function() {
             const name = document.getElementById('productName').value;
             const price = parseFloat(document.getElementById('productPrice').value);
@@ -104,34 +75,38 @@
                 return;
             }
 
-            if (!imageFile.type.startsWith('image/')) {
-                alert('Please select a valid image file.');
-                return;
-            }
-
-            try {
-                const storageRef = ref(storage, `product_images/${imageFile.name}`);
-                await uploadBytes(storageRef, imageFile);
-                const imageUrl = await getDownloadURL(storageRef);
-
-                await addDoc(collection(db, 'products'), {
-                    name: name,
-                    price: price,
-                    imageUrl: imageUrl
-                });
-                document.getElementById('status').textContent = 'Product added successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                document.getElementById('productName').value = '';
-                document.getElementById('productPrice').value = '';
-                document.getElementById('productImage').value = '';
-                displayProducts(); // Refresh the product list
-            } catch (error) {
-                document.getElementById('status').textContent = `Error adding product: ${error.message}`;
-                document.getElementById('status').style.color = '#F44336';
-            }
+            const storageRef = ref(storage, `product_images/${imageFile.name}`);
+            await uploadBytes(storageRef, imageFile);
+            const imageUrl = await getDownloadURL(storageRef);
+            await addDoc(collection(db, 'products'), { name, price, imageUrl });
+            displayProducts(); // Refresh the product list
         };
 
-        // Function to add a blog
+        // Display Products
+        async function displayProducts() {
+            const productsSnapshot = await getDocs(collection(db, 'products'));
+            const productsDisplay = document.getElementById('productsDisplay');
+            productsDisplay.innerHTML = '';
+
+            productsSnapshot.forEach(doc => {
+                const product = doc.data();
+                const productElement = document.createElement('div');
+                productElement.textContent = `Name: ${product.name}, Price: ${product.price}`;
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteProduct(doc.id);
+                productElement.appendChild(deleteButton);
+                productsDisplay.appendChild(productElement);
+            });
+        }
+
+        // Delete Product
+        window.deleteProduct = async function(productId) {
+            await deleteDoc(doc(db, 'products', productId));
+            displayProducts(); // Refresh the product list
+        };
+
+        // Add Blog
         window.addBlog = async function() {
             const title = document.getElementById('blogTitle').value;
             const description = document.getElementById('blogDescription').value;
@@ -142,136 +117,39 @@
                 return;
             }
 
-            if (!imageFile.type.startsWith('image/')) {
-                alert('Please select a valid image file.');
-                return;
-            }
-
-            try {
-                const storageRef = ref(storage, `blog_images/${imageFile.name}`);
-                await uploadBytes(storageRef, imageFile);
-                const imageUrl = await getDownloadURL(storageRef);
-
-                await addDoc(collection(db, 'blogs'), {
-                    title: title,
-                    description: description,
-                    imageUrl: imageUrl
-                });
-                document.getElementById('status').textContent = 'Blog added successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                document.getElementById('blogTitle').value = '';
-                document.getElementById('blogDescription').value = '';
-                document.getElementById('blogImage').value = '';
-                displayBlogs(); // Refresh the blog list
-            } catch (error) {
-                document.getElementById('status').textContent = `Error adding blog: ${error.message}`;
-                document.getElementById('status').style.color = '#F44336';
-            }
+            const storageRef = ref(storage, `blog_images/${imageFile.name}`);
+            await uploadBytes(storageRef, imageFile);
+            const imageUrl = await getDownloadURL(storageRef);
+            await addDoc(collection(db, 'blogs'), { title, description, imageUrl });
+            displayBlogs(); // Refresh the blog list
         };
 
-        // Function to display products
-        async function displayProducts() {
-            const productsSnapshot = await getDocs(collection(db, 'products'));
-            const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const productsDisplay = document.getElementById('productsDisplay');
-            productsDisplay.innerHTML = '';
-
-            productsList.forEach(product => {
-                const productElement = document.createElement('div');
-                productElement.textContent = `Name: ${product.name}, Price: ${product.price}`;
-                
-                if (auth.currentUser && auth.currentUser.email === 'harsh.sharma.sunil@gmail.com') {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.onclick = () => deleteProduct(product.id);
-                    productElement.appendChild(deleteButton);
-                }
-
-                productsDisplay.appendChild(productElement);
-            });
-        }
-
-        // Function to display blogs
+        // Display Blogs
         async function displayBlogs() {
             const blogsSnapshot = await getDocs(collection(db, 'blogs'));
-            const blogsList = blogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             const blogsDisplay = document.getElementById('blogsDisplay');
             blogsDisplay.innerHTML = '';
 
-            blogsList.forEach(blog => {
+            blogsSnapshot.forEach(doc => {
+                const blog = doc.data();
                 const blogElement = document.createElement('div');
                 blogElement.textContent = `Title: ${blog.title}`;
-                
-                if (auth.currentUser && auth.currentUser.email === 'harsh.sharma.sunil@gmail.com') {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.onclick = () => deleteBlog(blog.id);
-                    blogElement.appendChild(deleteButton);
-                }
-
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.onclick = () => deleteBlog(doc.id);
+                blogElement.appendChild(deleteButton);
                 blogsDisplay.appendChild(blogElement);
             });
         }
 
-        // Function to delete a product
-        window.deleteProduct = async function(productId) {
-            try {
-                await deleteDoc(doc(db, 'products', productId));
-                document.getElementById('status').textContent = 'Product deleted successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                displayProducts(); // Refresh the product list
-            } catch (error) {
-                document.getElementById('status').textContent = `Error deleting product: ${error.message}`;
-                document.getElementById('status').style.color = '#F44336';
-            }
-        };
-
-        // Function to delete a blog
+        // Delete Blog
         window.deleteBlog = async function(blogId) {
-            try {
-                await deleteDoc(doc(db, 'blogs', blogId));
-                document.getElementById('status').textContent = 'Blog deleted successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                displayBlogs(); // Refresh the blog list
-            } catch (error) {
-                document.getElementById('status').textContent = `Error deleting blog: ${error.message}`;
-                document.getElementById('status').style.color = '#F44336';
-            }
+            await deleteDoc(doc(db, 'blogs', blogId));
+            displayBlogs(); // Refresh the blog list
         };
-
-        // Function to logout
-        window.logout = async function() {
-            try {
-                await signOut(auth);
-                document.getElementById('status').textContent = 'Logged out successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                // Hide logout button and show login button
-                document.getElementById('adminLoginBtn').style.display = 'block';
-                document.getElementById('logoutBtn').style.display = 'none';
-                // Hide add product and blog sections
-                document.getElementById('addProductSection').style.display = 'none';
-                document.getElementById('addBlogSection').style.display = 'none'; // Added to hide blog section
-            } catch (error) {
-                document.getElementById('status').textContent = `Error logging out: ${error.message}`;
-                document.getElementById('status').style.color = '#F44336';
-            }
-        }
-
-        // Check for redirect result when the page loads
-        window.addEventListener('load', async () => {
-            try {
-                const result = await getRedirectResult(auth);
-                if (result && result.user) {
-                    console.log('User is signed in after redirect:', result.user);
-                }
-                await displayProducts(); // Show products on load
-                await displayBlogs(); // Show blogs on load
-            } catch (error) {
-                console.error('Error after redirect:', error);
-            }
-        });
     </script>
     <style>
+        /* Add your styles here */
         .container {
             max-width: 800px;
             margin: 40px auto;
@@ -290,28 +168,13 @@
             cursor: pointer;
             font-size: 16px;
         }
-        .admin-login-btn:hover {
-            background-color: #3e8e41;
-        }
         .status-message {
             font-size: 18px;
             font-weight: bold;
             margin-bottom: 20px;
         }
-        .user-count {
-            font-size: 16px;
-            margin-bottom: 20px;
-        }
-        .users-display, .products-display, .blogs-display {
+        .products-display, .blogs-display {
             margin-top: 20px;
-        }
-        .users-display div, .products-display div, .blogs-display div {
-            background-color: #f9f9f9;
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-        }
-        .users-display div:last-child, .products-display div:last-child, .blogs-display div:last-child {
-            border-bottom: none;
         }
     </style>
 </head>
@@ -321,26 +184,26 @@
         <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
         <button id="logoutBtn" onclick="logout()" class="admin-login-btn" style="display: none;">Logout</button>
         <div id="status" class="status-message"></div>
-        <div id="userCount" class="user-count"></div>
-        <div id="usersDisplay" class="users-display"></div>
 
-        <h2>Manage Products</h2>
-        <div id="addProductSection" style="display: none;">
-            <input type="text" id="productName" placeholder="Product Name" />
-            <input type="number" id="productPrice" placeholder="Product Price" />
-            <input type="file" id="productImage" accept="image/*" />
-            <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
-        </div>
-        <div id="productsDisplay" class="products-display"></div>
+        <div id="adminPanel" style="display: none;">
+            <h2>Manage Products</h2>
+            <div>
+                <input type="text" id="productName" placeholder="Product Name" />
+                <input type="number" id="productPrice" placeholder="Product Price" />
+                <input type="file" id="productImage" accept="image/*" />
+                <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
+            </div>
+            <div id="productsDisplay" class="products-display"></div>
 
-        <h2>Manage Blogs</h2>
-        <div id="addBlogSection" style="display: none;">
-            <input type="text" id="blogTitle" placeholder="Blog Title" />
-            <textarea id="blogDescription" placeholder="Blog Description"></textarea>
-            <input type="file" id="blogImage" accept="image/*" />
-            <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
+            <h2>Manage Blogs</h2>
+            <div>
+                <input type="text" id="blogTitle" placeholder="Blog Title" />
+                <textarea id="blogDescription" placeholder="Blog Description"></textarea>
+                <input type="file" id="blogImage" accept="image/*" />
+                <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
+            </div>
+            <div id="blogsDisplay" class="blogs-display"></div>
         </div>
-        <div id="blogsDisplay" class="blogs-display"></div>
     </div>
 </body>
 </html>
