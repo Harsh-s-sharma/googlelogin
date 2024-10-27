@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -281,8 +282,15 @@
             <h2>Manage Blogs</h2>
             <div>
                 <input type="text" id="blogTitle" placeholder="Blog Title" />
-                <textarea id="blogDescription" placeholder="Blog Description"></textarea>
+                <div id="blogDescription" class="blog-description-editor" contenteditable="true" placeholder="Blog Description"></div>
                 <input type="file" id="blogImage" accept="image/*" />
+                <select id="blogTags" multiple>
+                    <option value="Technology">Technology</option>
+                    <option value="Lifestyle">Lifestyle</option>
+                    <option value="Health">Health</option>
+                    <option value="Finance">Finance</option>
+                    <option value="Travel">Travel</option>
+                </select>
                 <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
             </div>
             <div id="blogsDisplay" class="blogs-display"></div>
