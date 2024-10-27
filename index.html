@@ -1,230 +1,191 @@
-<!-- Firebase SDK -->
-<script type="module">
-  // Import the functions you need from the SDKs you need
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-  import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-  import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In</title>
+    <script type="module">
+        // Import Firebase SDKs
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-analytics.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-  // Your web app's Firebase configuration
-  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-  const firebaseConfig = {
-    apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
-    authDomain: "login-e8086.firebaseapp.com",
-    projectId: "login-e8086",
-    storageBucket: "login-e8086.appspot.com",
-    messagingSenderId: "13482086131",
-    appId: "1:13482086131:web:31e8aad8911580e0083186",
-    measurementId: "G-8VQ8ME6J88"
-  };
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
+            authDomain: "login-e8086.firebaseapp.com",
+            projectId: "login-e8086",
+            storageBucket: "login-e8086.appspot.com",
+            messagingSenderId: "13482086131",
+            appId: "1:13482086131:web:31e8aad8911580e0083186",
+            measurementId: "G-8VQ8ME6J88"
+        };
 
-  // Initialize Firebase
-  let app, analytics, auth, db;
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-  try {
-    app = initializeApp(firebaseConfig);
-    analytics = getAnalytics(app);
-    auth = getAuth(app);
-    db = getFirestore(app);
-  } catch (error) {
-    console.error("Firebase initialization error:", error);
-  }
+        // Function to handle Google Sign-In
+        window.handleGoogleSignIn = function() {
+            const provider = new GoogleAuthProvider();
+            signInWithPopup(auth, provider).then((result) => {
+                const user = result.user;
+                saveUserSession(user);
+            }).catch((error) => {
+                showError(error.message);
+            });
+        }
 
-  // Function to handle Google Sign-In
-  window.handleGoogleSignIn = function() {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      client_id: '13482086131-r0b0nd11cpd04o45aba632rbhdt4g91d.apps.googleusercontent.com'
-    });
-    signInWithPopup(auth, provider)
-      .then((result) => {
-        const user = result.user;
-        // Save user session to Firestore
-        saveUserSession(user);
-      }).catch((error) => {
-        document.getElementById('status').textContent = `Error: ${error.message}`;
-        document.getElementById('status').style.color = '#F44336';
-      });
-  }
+        // Function to handle Phone Number Sign-In with OTP
+        window.handlePhoneNumberSignIn = function() {
+            let phoneNumber = document.getElementById('phoneNumber').value;
+            if (phoneNumber && phoneNumber.length === 10) {
+                phoneNumber = '+91' + phoneNumber;
+            }
+            if (!window.recaptchaVerifier) {
+                window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
+            }
+            signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier).then((confirmationResult) => {
+                const verificationCode = prompt('Enter the verification code sent to your phone:');
+                confirmationResult.confirm(verificationCode).then((result) => {
+                    const user = result.user;
+                    saveUserSession(user);
+                }).catch((error) => {
+                    showError(error.message);
+                });
+            }).catch((error) => {
+                showError(error.message);
+            });
+        }
 
-  // Function to handle Phone Number Sign-In with OTP
-  window.handlePhoneNumberSignIn = function() {
-    let phoneNumber = document.getElementById('phoneNumber').value;
-    if (phoneNumber && phoneNumber.length === 10) {
-      phoneNumber = '+91' + phoneNumber;
-    }
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier('recaptcha-container');
-    }
-    signInWithPhoneNumber(auth, phoneNumber, window.recaptchaVerifier)
-      .then((confirmationResult) => {
-        // SMS sent. Prompt user to type the verification code right away.
-        const verificationCode = prompt('Please enter the verification code that was sent to your phone.');
-        confirmationResult.confirm(verificationCode).then((result) => {
-          const user = result.user;
-          // Save user session to Firestore
-          saveUserSession(user);
-        }).catch((error) => {
-          document.getElementById('status').textContent = `Error: ${error.message}`;
-          document.getElementById('status').style.color = '#F44336';
+        // Function to save user session
+        async function saveUserSession(user) {
+            try {
+                await setDoc(doc(db, "userSessions", user.uid), {
+                    userId: user.uid,
+                    email: user.email,
+                    lastLogin: new Date().toISOString()
+                });
+                window.location.href = 'dashboard.html';
+            } catch (error) {
+                showError("Unable to save session");
+            }
+        }
+
+        // Function to handle Sign Out
+        window.handleSignOut = function() {
+            auth.signOut().then(() => {
+                document.getElementById('status').textContent = 'You have been signed out.';
+            }).catch((error) => {
+                showError(error.message);
+            });
+        }
+
+        // Check auth state on page load
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                document.getElementById('loginContainer').style.display = 'none';
+                document.getElementById('userContainer').style.display = 'block';
+                document.getElementById('userAvatar').src = user.photoURL || '';
+                document.getElementById('userName').textContent = user.displayName || user.email;
+                window.location.href = 'dashboard.html';
+            } else {
+                document.getElementById('loginContainer').style.display = 'flex';
+                document.getElementById('userContainer').style.display = 'none';
+            }
         });
-      }).catch((error) => {
-        document.getElementById('status').textContent = `Error: ${error.message}`;
-        document.getElementById('status').style.color = '#F44336';
-      });
-  }
 
-  // Function to save user session
-  async function saveUserSession(user) {
-    try {
-      await setDoc(doc(db, "userSessions", user.uid), {
-        userId: user.uid,
-        email: user.email,
-        lastLogin: new Date().toISOString()
-      });
-      // Redirect to dashboard after successful login and session save
-      window.location.href = 'dashboard.html';
-    } catch (error) {
-      console.error("Error saving user session: ", error);
-      document.getElementById('status').textContent = `Error: Unable to save session`;
-      document.getElementById('status').style.color = '#F44336';
-    }
-  }
-
-  // Function to handle Sign Out
-  window.handleSignOut = function() {
-    auth.signOut().then(() => {
-      document.getElementById('status').textContent = 'You have been signed out.';
-      document.getElementById('status').style.color = '#2196F3';
-      document.getElementById('loginContainer').style.display = 'flex';
-      document.getElementById('userContainer').style.display = 'none';
-    }).catch((error) => {
-      document.getElementById('status').textContent = `Error: ${error.message}`;
-      document.getElementById('status').style.color = '#F44336';
-    });
-  }
-
-  // Check auth state on page load
-  onAuthStateChanged(auth, (user) => {
-    if (user) {
-      // User is signed in
-      document.getElementById('loginContainer').style.display = 'none';
-      document.getElementById('userContainer').style.display = 'block';
-      document.getElementById('userAvatar').src = user.photoURL || '';
-      document.getElementById('userName').textContent = user.displayName || user.email;
-      // Redirect to dashboard if already signed in
-      window.location.href = 'dashboard.html';
-    } else {
-      // User is signed out
-      document.getElementById('loginContainer').style.display = 'flex';
-      document.getElementById('userContainer').style.display = 'none';
-    }
-  });
-</script>
-
-<style>
-  body {
-    font-family: 'Roboto', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    margin: 0;
-    background-color: #f5f5f5;
-  }
-  .container {
-    background-color: white;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    text-align: center;
-  }
-  h1 {
-    color: #333;
-    margin-bottom: 30px;
-  }
-  #googleSignInBtn {
-    background-color: #4285F4;
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s;
-  }
-  #googleSignInBtn:hover {
-    background-color: #357ae8;
-  }
-  #googleSignInBtn img {
-    width: 18px;
-    margin-right: 10px;
-  }
-  #userContainer {
-    display: none;
-  }
-  #userAvatar {
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    margin-bottom: 15px;
-  }
-  #userName {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 15px;
-  }
-  #signOutBtn {
-    background-color: #f44336;
-    color: white;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 14px;
-    transition: background-color 0.3s;
-  }
-  #signOutBtn:hover {
-    background-color: #d32f2f;
-  }
-  #status {
-    margin-top: 20px;
-    font-weight: bold;
-  }
-  #phoneNumberSignInBtn {
-    background-color: #4CAF50;
-    color: white;
-    padding: 12px 24px;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 16px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background-color 0.3s;
-  }
-  #phoneNumberSignInBtn:hover {
-    background-color: #45a049;
-  }
-</style>
-
-<div class="container">
-  <h1>Welcome</h1>
-  <div id="loginContainer">
-    <button id="googleSignInBtn" onclick="handleGoogleSignIn()">
-      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo">
-      Sign in with Google
-    </button>
-
-  </div>
-  <div id="userContainer">
-    <img id="userAvatar" alt="User Avatar">
-    <div id="userName"></div>
-    <button id="signOutBtn" onclick="handleSignOut()">Sign Out</button>
-  </div>
-  <div id="status"></div>
-</div>
+        function showError(message) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.style.color = '#F44336';
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        button {
+            background-color: #4285F4;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 0;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #357ae8;
+        }
+        #userContainer {
+            display: none;
+        }
+        #userAvatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+        #userName {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+        #signOutBtn {
+            background-color: #f44336;
+        }
+        #signOutBtn:hover {
+            background-color: #d32f2f;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome</h1>
+        <div id="loginContainer">
+            <button id="googleSignInBtn" onclick="handleGoogleSignIn()">
+                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google logo" style="width: 18px; margin-right: 10px;">
+                Sign in with Google
+            </button>
+            <div id="recaptcha-container"></div>
+            <input type="text" id="phoneNumber" placeholder="Enter your phone number" maxlength="10" style="width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px;">
+            <button id="phoneNumberSignInBtn" onclick="handlePhoneNumberSignIn()">Sign in with Phone</button>
+        </div>
+        <div id="userContainer">
+            <img id="userAvatar" alt="User Avatar">
+            <div id="userName"></div>
+            <button id="signOutBtn" onclick="handleSignOut()">Sign Out</button>
+        </div>
+        <div id="status"></div>
+    </div>
+</body>
+</html>
