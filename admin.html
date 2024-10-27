@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -13,12 +12,12 @@
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
-    authDomain: "login-e8086.firebaseapp.com",
-    projectId: "login-e8086",
-    storageBucket: "login-e8086.appspot.com",
-    messagingSenderId: "13482086131",
-    appId: "1:13482086131:web:31e8aad8911580e0083186",
-    measurementId: "G-8VQ8ME6J88"
+            authDomain: "login-e8086.firebaseapp.com",
+            projectId: "login-e8086",
+            storageBucket: "login-e8086.appspot.com",
+            messagingSenderId: "13482086131",
+            appId: "1:13482086131:web:31e8aad8911580e0083186",
+            measurementId: "G-8VQ8ME6J88"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -152,7 +151,7 @@
         // Add Blog
         window.addBlog = async function() {
             const title = document.getElementById('blogTitle').value;
-            const description = document.getElementById('blogDescription').value;
+            const description = document.getElementById('blogDescription').textContent;
             const imageFile = document.getElementById('blogImage').files[0];
 
             if (!title || !description || !imageFile) {
