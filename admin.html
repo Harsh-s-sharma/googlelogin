@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
@@ -69,6 +69,8 @@
             const name = document.getElementById('productName').value;
             const price = parseFloat(document.getElementById('productPrice').value);
             const imageFile = document.getElementById('productImage').files[0];
+            const inStock = document.getElementById('inStock').checked;
+            const tags = document.getElementById('productTags').value;
 
             if (!name || isNaN(price) || !imageFile) {
                 alert('Please provide valid product details and select an image.');
@@ -78,7 +80,7 @@
             const storageRef = ref(storage, `product_images/${imageFile.name}`);
             await uploadBytes(storageRef, imageFile);
             const imageUrl = await getDownloadURL(storageRef);
-            await addDoc(collection(db, 'products'), { name, price, imageUrl });
+            await addDoc(collection(db, 'products'), { name, price, imageUrl, inStock, tags });
             displayProducts(); // Refresh the product list
         };
 
@@ -91,14 +93,51 @@
             productsSnapshot.forEach(doc => {
                 const product = doc.data();
                 const productElement = document.createElement('div');
-                productElement.textContent = `Name: ${product.name}, Price: ${product.price}`;
+                productElement.innerHTML = `
+                    <strong>Name:</strong> ${product.name}, 
+                    <strong>Price:</strong> ${product.price}, 
+                    <strong>In Stock:</strong> ${product.inStock}, 
+                    <strong>Tags:</strong> ${product.tags}
+                `;
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.onclick = () => editProduct(doc.id, product);
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Delete';
                 deleteButton.onclick = () => deleteProduct(doc.id);
+                productElement.appendChild(editButton);
                 productElement.appendChild(deleteButton);
                 productsDisplay.appendChild(productElement);
             });
         }
+
+        // Edit Product
+        function editProduct(productId, product) {
+            document.getElementById('productName').value = product.name;
+            document.getElementById('productPrice').value = product.price;
+            document.getElementById('inStock').checked = product.inStock;
+            document.getElementById('productTags').value = product.tags;
+            document.getElementById('addProductBtn').textContent = 'Update Product';
+            document.getElementById('addProductBtn').onclick = () => updateProduct(productId);
+        }
+
+        // Update Product
+        window.updateProduct = async function(productId) {
+            const name = document.getElementById('productName').value;
+            const price = parseFloat(document.getElementById('productPrice').value);
+            const inStock = document.getElementById('inStock').checked;
+            const tags = document.getElementById('productTags').value;
+
+            if (!name || isNaN(price)) {
+                alert('Please provide valid product details.');
+                return;
+            }
+
+            await updateDoc(doc(db, 'products', productId), { name, price, inStock, tags });
+            document.getElementById('addProductBtn').textContent = 'Add Product';
+            document.getElementById('addProductBtn').onclick = addProduct;
+            displayProducts(); // Refresh the product list
+        };
 
         // Delete Product
         window.deleteProduct = async function(productId) {
@@ -190,6 +229,13 @@
             <div>
                 <input type="text" id="productName" placeholder="Product Name" />
                 <input type="number" id="productPrice" placeholder="Product Price" />
+                <input type="checkbox" id="inStock" /> In Stock
+                <select id="productTags">
+                    <option value="">Select Tags</option>
+                    <option value="Sales">Sales</option>
+                    <option value="New">New</option>
+                    <option value="Featured">Featured</option>
+                </select>
                 <input type="file" id="productImage" accept="image/*" />
                 <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
             </div>
