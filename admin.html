@@ -11,13 +11,13 @@
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
         const firebaseConfig = {
-            apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
-            authDomain: "login-e8086.firebaseapp.com",
-            projectId: "login-e8086",
-            storageBucket: "login-e8086.appspot.com",
-            messagingSenderId: "13482086131",
-            appId: "1:13482086131:web:31e8aad8911580e0083186",
-            measurementId: "G-8VQ8ME6J88"
+            apiKey: "YOUR_API_KEY", // Replace with your actual API key
+            authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+            projectId: "YOUR_PROJECT_ID",
+            storageBucket: "YOUR_PROJECT_ID.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID",
+            measurementId: "YOUR_MEASUREMENT_ID"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -25,7 +25,6 @@
         const db = getFirestore(app);
         const storage = getStorage(app);
 
-        // Listen for auth state changes
         onAuthStateChanged(auth, user => {
             if (user && user.email === 'harsh.sharma.sunil@gmail.com') {
                 showAdminPanel(user);
@@ -78,10 +77,14 @@
             }
 
             const storageRef = ref(storage, `product_images/${imageFile.name}`);
-            await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(storageRef);
-            await addDoc(collection(db, 'products'), { name, price, imageUrl, inStock, tags });
-            displayProducts(); // Refresh the product list
+            try {
+                await uploadBytes(storageRef, imageFile);
+                const imageUrl = await getDownloadURL(storageRef);
+                await addDoc(collection(db, 'products'), { name, price, imageUrl, inStock, tags });
+                displayProducts(); // Refresh the product list
+            } catch (error) {
+                console.error('Error adding product: ', error);
+            }
         };
 
         // Display Products
@@ -157,10 +160,14 @@
             }
 
             const storageRef = ref(storage, `blog_images/${imageFile.name}`);
-            await uploadBytes(storageRef, imageFile);
-            const imageUrl = await getDownloadURL(storageRef);
-            await addDoc(collection(db, 'blogs'), { title, description, imageUrl });
-            displayBlogs(); // Refresh the blog list
+            try {
+                await uploadBytes(storageRef, imageFile);
+                const imageUrl = await getDownloadURL(storageRef);
+                await addDoc(collection(db, 'blogs'), { title, description, imageUrl });
+                displayBlogs(); // Refresh the blog list
+            } catch (error) {
+                console.error('Error adding blog: ', error);
+            }
         };
 
         // Display Blogs
@@ -188,7 +195,6 @@
         };
     </script>
     <style>
-        /* Add your styles here */
         .container {
             max-width: 800px;
             margin: 40px auto;
