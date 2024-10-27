@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, addDoc, doc, setDoc, getDoc, query, orderBy, limit, updateDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -57,9 +57,28 @@
                     <p class="price">Price: $${product.price.toFixed(2)}</p>
                     <button onclick="addToCart('${doc.id}')">Add to Cart</button>
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
+                    <button onclick="editProduct('${doc.id}', '${product.name}', '${product.description}', ${product.price})">Edit</button>
                 `;
                 productsContainer.appendChild(productElement);
             });
+        }
+
+        async function editProduct(productId, name, description, price) {
+            const newName = prompt("Edit Product Name:", name);
+            const newDescription = prompt("Edit Product Description:", description);
+            const newPrice = parseFloat(prompt("Edit Product Price:", price));
+
+            if (newName && newDescription && !isNaN(newPrice)) {
+                const productRef = doc(db, 'products', productId);
+                await updateDoc(productRef, {
+                    name: newName,
+                    description: newDescription,
+                    price: newPrice
+                });
+                loadProducts(); // Refresh product list
+            } else {
+                alert('Please provide valid product details.');
+            }
         }
 
         async function addToCart(productId) {
