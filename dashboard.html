@@ -29,7 +29,7 @@
                 await updateUserSession(user);
                 loadProducts();
                 loadRecentlyAddedProduct();
-                loadBlogs();
+                loadBlogs(); // Added to load blogs
             } else {
                 window.location.href = 'index.html';
             }
@@ -78,8 +78,10 @@
         async function loadRecentlyAddedProduct() {
             const recentProductContainer = document.getElementById('recentProductContainer');
             recentProductContainer.innerHTML = ''; // Clear existing content
+            
             const q = query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(1));
             const querySnapshot = await getDocs(q);
+            
             querySnapshot.forEach((doc) => {
                 const product = doc.data();
                 const productElement = document.createElement('div');
@@ -146,6 +148,7 @@
                 });
                 alert('Product purchased successfully!');
                 await updateUserSession(auth.currentUser);
+                // Add product to cart
                 await addDoc(collection(db, 'cart'), {
                     userId: auth.currentUser.uid,
                     productId: productId,
@@ -168,6 +171,7 @@
             }
         }
 
+        // Set up an interval to update the session every 5 minutes
         setInterval(async () => {
             if (auth.currentUser) {
                 await updateUserSession(auth.currentUser);
@@ -175,7 +179,158 @@
         }, 5 * 60 * 1000);
     </script>
     <style>
-        /* (Your existing CSS styles go here) */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+        }
+        nav ul li {
+            margin-right: 20px;
+        }
+        nav ul li a {
+            text-decoration: none;
+            color: white;
+        }
+        #productsContainer {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .product {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: transform 0.3s ease;
+        }
+        .product:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover; /* Fixed image size and object-fit to cover */
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        .price {
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 4px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .add-product-link {
+            display: block;
+            text-align: center;
+            margin: 20px 0;
+            font-size: 18px;
+            color: #333;
+            text-decoration: none;
+        }
+        .add-product-link:hover {
+            text-decoration: underline;
+        }
+        .recent-product {
+            background-color: #e6f7ff;
+            border: 2px solid #1890ff;
+            margin-bottom: 20px;
+        }
+        .recent-product h3 {
+            color: #1890ff;
+            text-align: center;
+        }
+        /* New CSS styles */
+        .product {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .product:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.19);
+        }
+        .recent-product {
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .recent-product:hover {
+            box-shadow: 0 6px 20px rgba(0,0,0,0.19);
+        }
+        .cart-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 16px;
+            margin: 4px 2px;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background-color 0.3s ease;
+        }
+        .cart-icon:hover {
+            background-color: #45a049;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .popup-content {
+            max-width: 600px;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
@@ -183,6 +338,7 @@
         <nav>
             <ul>
                 <li><a href="dashboard.html">Dashboard</a></li>
+        
                 <li><a href="index.html">Sign Out</a></li>
             </ul>
         </nav>
@@ -194,7 +350,6 @@
         <div id="recentProductContainer"></div>
         <h2>Available Products</h2>
         <div id="productsContainer"></div>
-        <h2>Latest Blogs</h2>
         <div id="blogsContainer"></div> <!-- Added to display blogs -->
     </div>
     <button class="cart-icon" onclick="openCart()">🛒</button>
@@ -216,8 +371,8 @@
                 const cartItemElement = document.createElement('div');
                 cartItemElement.className = 'cart-item';
                 cartItemElement.innerHTML = `
-                    <h3>Product ID: ${cartItem.productId}</h3>
-                    <p>Added on: ${cartItem.timestamp.toDate().toLocaleString()}</p>
+                    <h3>${cartItem.productId}</h3>
+                    <p>${cartItem.timestamp.toDate().toLocaleString()}</p>
                 `;
                 cartItemsContainer.appendChild(cartItemElement);
             });
