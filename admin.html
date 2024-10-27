@@ -6,10 +6,12 @@
     <title>Admin Panel</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, signInWithPopup, GoogleAuthProvider, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getAuth, signInWithPopup, GoogleAuthProvider, getRedirectResult, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
         import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getMessaging, getToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-storage.js";
 
+        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
             authDomain: "login-e8086.firebaseapp.com",
@@ -20,56 +22,79 @@
             measurementId: "G-8VQ8ME6J88"
         };
 
+        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const messaging = getMessaging(app);
         const storage = getStorage(app);
 
+        // Function to handle admin login and user count
         window.handleAdminLogin = async function() {
             const password = prompt("Please enter the admin password:");
             if (password !== "admin123") {
-                showStatusMessage('Incorrect password. Access denied.', 'error');
+                document.getElementById('status').textContent = 'Incorrect password. Access denied.';
+                document.getElementById('status').style.color = '#F44336';
                 return;
             }
 
             const provider = new GoogleAuthProvider();
             try {
                 const result = await signInWithPopup(auth, provider);
-                if (result.user.email === 'harsh.sharma.sunil@gmail.com') {
-                    showStatusMessage(`Welcome, Admin ${result.user.displayName}!`, 'success');
-                    document.getElementById('adminLoginBtn').style.display = 'none';
-                    document.getElementById('logoutBtn').style.display = 'block';
-                    document.getElementById('addProductSection').style.display = 'block';
-                    document.getElementById('addBlogSection').style.display = 'block';
-                    await displayUsers();
-                } else {
-                    showStatusMessage('Access denied. Admin only.', 'error');
+                if (result.user) {
+                    const user = result.user;
+
+                    // Check if the user is an admin
+                    if (user.email === 'harsh.sharma.sunil@gmail.com') {
+                        document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
+                        document.getElementById('status').style.color = '#4CAF50';
+                        
+                        // Hide login button and show logout button
+                        document.getElementById('adminLoginBtn').style.display = 'none';
+                        document.getElementById('logoutBtn').style.display = 'block';
+
+                        // Show add product section
+                        document.getElementById('addProductSection').style.display = 'block';
+
+                        // Get all users
+                        const usersSnapshot = await getDocs(collection(db, 'users'));
+                        const usersList = usersSnapshot.docs.map(doc => doc.data());
+                        document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
+                        
+                        // Display all users
+                        const usersDisplay = document.getElementById('usersDisplay');
+                        usersDisplay.innerHTML = '';
+                        usersList.forEach(user => {
+                            const userElement = document.createElement('div');
+                            userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
+                            usersDisplay.appendChild(userElement);
+                        });
+                        
+                        // Subscribe to admin topic
+                        const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
+                        if (currentToken) {
+                            await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
+                                method: 'POST',
+                                headers: {
+                                    Authorization: 'key=BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I', // Use your actual server key here
+                                    'Content-Type': 'application/json'
+                                }
+                            });
+                        }
+                    } else {
+                        document.getElementById('status').textContent = 'Access denied. Admin only.';
+                        document.getElementById('status').style.color = '#F44336';
+                    }
                 }
             } catch (error) {
-                showStatusMessage(`Error: ${error.message}`, 'error');
+                document.getElementById('status').textContent = `Error: ${error.message}`;
+                document.getElementById('status').style.color = '#F44336';
             }
-        };
-
-        function showStatusMessage(message, type) {
-            const status = document.getElementById('status');
-            status.textContent = message;
-            status.style.color = type === 'error' ? '#F44336' : '#4CAF50';
         }
 
-        async function displayUsers() {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
-            const usersDisplay = document.getElementById('usersDisplay');
-            usersDisplay.innerHTML = '';
-            usersSnapshot.docs.forEach(user => {
-                const userElement = document.createElement('div');
-                userElement.textContent = `Name: ${user.data().name}, Email: ${user.data().email}`;
-                usersDisplay.appendChild(userElement);
-            });
-        }
-
+        // Function to add a product
         window.addProduct = async function() {
-            const name = document.getElementById('productName').value.trim();
+            const name = document.getElementById('productName').value;
             const price = parseFloat(document.getElementById('productPrice').value);
             const imageFile = document.getElementById('productImage').files[0];
 
@@ -88,58 +113,97 @@
                 await uploadBytes(storageRef, imageFile);
                 const imageUrl = await getDownloadURL(storageRef);
 
-                await addDoc(collection(db, 'products'), { name, price, imageUrl });
-                showStatusMessage('Product added successfully!', 'success');
-                resetProductForm();
+                await addDoc(collection(db, 'products'), {
+                    name: name,
+                    price: price,
+                    imageUrl: imageUrl
+                });
+                document.getElementById('status').textContent = 'Product added successfully!';
+                document.getElementById('status').style.color = '#4CAF50';
+                document.getElementById('productName').value = '';
+                document.getElementById('productPrice').value = '';
+                document.getElementById('productImage').value = '';
                 displayProducts(); // Refresh the product list
             } catch (error) {
-                showStatusMessage(`Error adding product: ${error.message}`, 'error');
+                document.getElementById('status').textContent = `Error adding product: ${error.message}`;
+                document.getElementById('status').style.color = '#F44336';
             }
         };
 
-        function resetProductForm() {
-            document.getElementById('productName').value = '';
-            document.getElementById('productPrice').value = '';
-            document.getElementById('productImage').value = '';
+        // Function to display products
+        async function displayProducts() {
+            const productsSnapshot = await getDocs(collection(db, 'products'));
+            const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            const productsDisplay = document.getElementById('productsDisplay');
+            productsDisplay.innerHTML = '';
+
+            productsList.forEach(product => {
+                const productElement = document.createElement('div');
+                productElement.textContent = `Name: ${product.name}, Price: ${product.price}`;
+                
+                if (auth.currentUser && auth.currentUser.email === 'harsh.sharma.sunil@gmail.com') {
+                    const deleteButton = document.createElement('button');
+                    deleteButton.textContent = 'Delete';
+                    deleteButton.onclick = () => deleteProduct(product.id);
+                    productElement.appendChild(deleteButton);
+                }
+
+                productsDisplay.appendChild(productElement);
+            });
         }
 
-        // Similar changes can be applied to addBlog, displayProducts, displayBlogs, deleteProduct, deleteBlog, and logout functions...
+        // Function to delete a product
+        window.deleteProduct = async function(productId) {
+            try {
+                await deleteDoc(doc(db, 'products', productId));
+                document.getElementById('status').textContent = 'Product deleted successfully!';
+                document.getElementById('status').style.color = '#4CAF50';
+                displayProducts(); // Refresh the product list
+            } catch (error) {
+                document.getElementById('status').textContent = `Error deleting product: ${error.message}`;
+                document.getElementById('status').style.color = '#F44336';
+            }
+        };
 
+        // Function to logout
         window.logout = async function() {
             try {
                 await signOut(auth);
-                showStatusMessage('Logged out successfully!', 'success');
+                document.getElementById('status').textContent = 'Logged out successfully!';
+                document.getElementById('status').style.color = '#4CAF50';
+                // Hide logout button and show login button
                 document.getElementById('adminLoginBtn').style.display = 'block';
                 document.getElementById('logoutBtn').style.display = 'none';
+                // Hide add product section
                 document.getElementById('addProductSection').style.display = 'none';
-                document.getElementById('addBlogSection').style.display = 'none';
             } catch (error) {
-                showStatusMessage(`Error logging out: ${error.message}`, 'error');
+                document.getElementById('status').textContent = `Error logging out: ${error.message}`;
+                document.getElementById('status').style.color = '#F44336';
             }
         }
 
+        // Check for redirect result when the page loads
         window.addEventListener('load', async () => {
-            await displayProducts(); // Show products on load
-            await displayBlogs(); // Show blogs on load
+            try {
+                const result = await getRedirectResult(auth);
+                if (result && result.user) {
+                    console.log('User is signed in after redirect:', result.user);
+                }
+                await displayProducts(); // Show products on load
+            } catch (error) {
+                console.error('Error after redirect:', error);
+            }
         });
     </script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            margin: 0;
-            padding: 20px;
-        }
         .container {
             max-width: 800px;
-            margin: auto;
+            margin: 40px auto;
             padding: 20px;
-            background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-        h1, h2 {
-            color: #333;
+            background-color: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         .admin-login-btn {
             background-color: #4CAF50;
@@ -151,21 +215,26 @@
             font-size: 16px;
         }
         .admin-login-btn:hover {
-            background-color: #45a049;
+            background-color: #3e8e41;
         }
         .status-message {
             font-size: 18px;
+            font-weight: bold;
             margin-bottom: 20px;
         }
-        .users-display, .products-display, .blogs-display {
+        .user-count {
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+        .users-display, .products-display {
             margin-top: 20px;
         }
-        .users-display div, .products-display div, .blogs-display div {
+        .users-display div, .products-display div {
             background-color: #f9f9f9;
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
-        .users-display div:last-child, .products-display div:last-child, .blogs-display div:last-child {
+        .users-display div:last-child, .products-display div:last-child {
             border-bottom: none;
         }
     </style>
@@ -187,15 +256,6 @@
             <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
         </div>
         <div id="productsDisplay" class="products-display"></div>
-
-        <h2>Manage Blogs</h2>
-        <div id="addBlogSection" style="display: none;">
-            <input type="text" id="blogTitle" placeholder="Blog Title" />
-            <textarea id="blogDescription" placeholder="Blog Description"></textarea>
-            <input type="file" id="blogImage" accept="image/*" />
-            <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
-        </div>
-        <div id="blogsDisplay" class="blogs-display"></div>
     </div>
 </body>
 </html>
