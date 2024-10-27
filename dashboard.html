@@ -127,7 +127,7 @@
                     <div class="popup-content">
                         <h2>${blog.title}</h2>
                         <p>${blog.content}</p>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image object-fit-cover rounded-lg shadow-md w-full h-64">
                         <button onclick="closePopup()">Close</button>
                     </div>
                 `;
