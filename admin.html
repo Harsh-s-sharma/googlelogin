@@ -46,35 +46,34 @@
 
                     // Check if the user is an admin
                     if (user.email === 'harsh.sharma.sunil@gmail.com') {
-                        document.getElementById('status').textContent = Welcome, Admin ${user.displayName}!;
+                        document.getElementById('status').textContent = `Welcome, Admin ${user.displayName}!`;
                         document.getElementById('status').style.color = '#4CAF50';
                         
                         // Hide login button and show logout button
                         document.getElementById('adminLoginBtn').style.display = 'none';
                         document.getElementById('logoutBtn').style.display = 'block';
 
-                        // Show add product and blog sections
+                        // Show add product section
                         document.getElementById('addProductSection').style.display = 'block';
-                        document.getElementById('addBlogSection').style.display = 'block'; // Added to show blog section
 
                         // Get all users
                         const usersSnapshot = await getDocs(collection(db, 'users'));
                         const usersList = usersSnapshot.docs.map(doc => doc.data());
-                        document.getElementById('userCount').textContent = Total users: ${usersSnapshot.size};
+                        document.getElementById('userCount').textContent = `Total users: ${usersSnapshot.size}`;
                         
                         // Display all users
                         const usersDisplay = document.getElementById('usersDisplay');
                         usersDisplay.innerHTML = '';
                         usersList.forEach(user => {
                             const userElement = document.createElement('div');
-                            userElement.textContent = Name: ${user.name}, Email: ${user.email};
+                            userElement.textContent = `Name: ${user.name}, Email: ${user.email}`;
                             usersDisplay.appendChild(userElement);
                         });
                         
                         // Subscribe to admin topic
                         const currentToken = await getToken(messaging, { vapidKey: 'BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I' });
                         if (currentToken) {
-                            await fetch(https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin, {
+                            await fetch(`https://iid.googleapis.com/iid/v1/${currentToken}/rel/topics/admin`, {
                                 method: 'POST',
                                 headers: {
                                     Authorization: 'key=BL5sLTpeFnV7qPCEP-r5IZwXzNdE20-MmLVJ1ZeLpLcpJK81cq0nj0jyBS3rDzzzAMw6ZIxFbshA6GyG3ecjh_I', // Use your actual server key here
@@ -88,7 +87,7 @@
                     }
                 }
             } catch (error) {
-                document.getElementById('status').textContent = Error: ${error.message};
+                document.getElementById('status').textContent = `Error: ${error.message}`;
                 document.getElementById('status').style.color = '#F44336';
             }
         }
@@ -97,9 +96,11 @@
         window.addProduct = async function() {
             const name = document.getElementById('productName').value;
             const price = parseFloat(document.getElementById('productPrice').value);
+            const stock = parseInt(document.getElementById('productStock').value);
+            const category = document.getElementById('productCategory').value;
             const imageFile = document.getElementById('productImage').files[0];
 
-            if (!name || isNaN(price) || !imageFile) {
+            if (!name || isNaN(price) || isNaN(stock) || !category || !imageFile) {
                 alert('Please provide valid product details and select an image.');
                 return;
             }
@@ -110,61 +111,27 @@
             }
 
             try {
-                const storageRef = ref(storage, product_images/${imageFile.name});
+                const storageRef = ref(storage, `product_images/${imageFile.name}`);
                 await uploadBytes(storageRef, imageFile);
                 const imageUrl = await getDownloadURL(storageRef);
 
                 await addDoc(collection(db, 'products'), {
                     name: name,
                     price: price,
+                    stock: stock,
+                    category: category,
                     imageUrl: imageUrl
                 });
                 document.getElementById('status').textContent = 'Product added successfully!';
                 document.getElementById('status').style.color = '#4CAF50';
                 document.getElementById('productName').value = '';
                 document.getElementById('productPrice').value = '';
+                document.getElementById('productStock').value = '';
+                document.getElementById('productCategory').value = '';
                 document.getElementById('productImage').value = '';
                 displayProducts(); // Refresh the product list
             } catch (error) {
-                document.getElementById('status').textContent = Error adding product: ${error.message};
-                document.getElementById('status').style.color = '#F44336';
-            }
-        };
-
-        // Function to add a blog
-        window.addBlog = async function() {
-            const title = document.getElementById('blogTitle').value;
-            const description = document.getElementById('blogDescription').value;
-            const imageFile = document.getElementById('blogImage').files[0];
-
-            if (!title || !description || !imageFile) {
-                alert('Please provide valid blog details and select an image.');
-                return;
-            }
-
-            if (!imageFile.type.startsWith('image/')) {
-                alert('Please select a valid image file.');
-                return;
-            }
-
-            try {
-                const storageRef = ref(storage, blog_images/${imageFile.name});
-                await uploadBytes(storageRef, imageFile);
-                const imageUrl = await getDownloadURL(storageRef);
-
-                await addDoc(collection(db, 'blogs'), {
-                    title: title,
-                    description: description,
-                    imageUrl: imageUrl
-                });
-                document.getElementById('status').textContent = 'Blog added successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                document.getElementById('blogTitle').value = '';
-                document.getElementById('blogDescription').value = '';
-                document.getElementById('blogImage').value = '';
-                displayBlogs(); // Refresh the blog list
-            } catch (error) {
-                document.getElementById('status').textContent = Error adding blog: ${error.message};
+                document.getElementById('status').textContent = `Error adding product: ${error.message}`;
                 document.getElementById('status').style.color = '#F44336';
             }
         };
@@ -178,7 +145,7 @@
 
             productsList.forEach(product => {
                 const productElement = document.createElement('div');
-                productElement.textContent = Name: ${product.name}, Price: ${product.price};
+                productElement.textContent = `Name: ${product.name}, Price: ${product.price}, Stock: ${product.stock}, Category: ${product.category}`;
                 
                 if (auth.currentUser && auth.currentUser.email === 'harsh.sharma.sunil@gmail.com') {
                     const deleteButton = document.createElement('button');
@@ -191,28 +158,6 @@
             });
         }
 
-        // Function to display blogs
-        async function displayBlogs() {
-            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
-            const blogsList = blogsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            const blogsDisplay = document.getElementById('blogsDisplay');
-            blogsDisplay.innerHTML = '';
-
-            blogsList.forEach(blog => {
-                const blogElement = document.createElement('div');
-                blogElement.textContent = Title: ${blog.title};
-                
-                if (auth.currentUser && auth.currentUser.email === 'harsh.sharma.sunil@gmail.com') {
-                    const deleteButton = document.createElement('button');
-                    deleteButton.textContent = 'Delete';
-                    deleteButton.onclick = () => deleteBlog(blog.id);
-                    blogElement.appendChild(deleteButton);
-                }
-
-                blogsDisplay.appendChild(blogElement);
-            });
-        }
-
         // Function to delete a product
         window.deleteProduct = async function(productId) {
             try {
@@ -221,20 +166,7 @@
                 document.getElementById('status').style.color = '#4CAF50';
                 displayProducts(); // Refresh the product list
             } catch (error) {
-                document.getElementById('status').textContent = Error deleting product: ${error.message};
-                document.getElementById('status').style.color = '#F44336';
-            }
-        };
-
-        // Function to delete a blog
-        window.deleteBlog = async function(blogId) {
-            try {
-                await deleteDoc(doc(db, 'blogs', blogId));
-                document.getElementById('status').textContent = 'Blog deleted successfully!';
-                document.getElementById('status').style.color = '#4CAF50';
-                displayBlogs(); // Refresh the blog list
-            } catch (error) {
-                document.getElementById('status').textContent = Error deleting blog: ${error.message};
+                document.getElementById('status').textContent = `Error deleting product: ${error.message}`;
                 document.getElementById('status').style.color = '#F44336';
             }
         };
@@ -248,11 +180,10 @@
                 // Hide logout button and show login button
                 document.getElementById('adminLoginBtn').style.display = 'block';
                 document.getElementById('logoutBtn').style.display = 'none';
-                // Hide add product and blog sections
+                // Hide add product section
                 document.getElementById('addProductSection').style.display = 'none';
-                document.getElementById('addBlogSection').style.display = 'none'; // Added to hide blog section
             } catch (error) {
-                document.getElementById('status').textContent = Error logging out: ${error.message};
+                document.getElementById('status').textContent = `Error logging out: ${error.message}`;
                 document.getElementById('status').style.color = '#F44336';
             }
         }
@@ -265,7 +196,6 @@
                     console.log('User is signed in after redirect:', result.user);
                 }
                 await displayProducts(); // Show products on load
-                await displayBlogs(); // Show blogs on load
             } catch (error) {
                 console.error('Error after redirect:', error);
             }
@@ -302,15 +232,15 @@
             font-size: 16px;
             margin-bottom: 20px;
         }
-        .users-display, .products-display, .blogs-display {
+        .users-display, .products-display {
             margin-top: 20px;
         }
-        .users-display div, .products-display div, .blogs-display div {
+        .users-display div, .products-display div {
             background-color: #f9f9f9;
             padding: 10px;
             border-bottom: 1px solid #ddd;
         }
-        .users-display div:last-child, .products-display div:last-child, .blogs-display div:last-child {
+        .users-display div:last-child, .products-display div:last-child {
             border-bottom: none;
         }
     </style>
@@ -328,19 +258,12 @@
         <div id="addProductSection" style="display: none;">
             <input type="text" id="productName" placeholder="Product Name" />
             <input type="number" id="productPrice" placeholder="Product Price" />
+            <input type="number" id="productStock" placeholder="Product Stock" />
+            <input type="text" id="productCategory" placeholder="Product Category" />
             <input type="file" id="productImage" accept="image/*" />
             <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
         </div>
         <div id="productsDisplay" class="products-display"></div>
-
-        <h2>Manage Blogs</h2>
-        <div id="addBlogSection" style="display: none;">
-            <input type="text" id="blogTitle" placeholder="Blog Title" />
-            <textarea id="blogDescription" placeholder="Blog Description"></textarea>
-            <input type="file" id="blogImage" accept="image/*" />
-            <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
-        </div>
-        <div id="blogsDisplay" class="blogs-display"></div>
     </div>
 </body>
 </html>
