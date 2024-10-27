@@ -29,6 +29,7 @@
                 await updateUserSession(user);
                 loadProducts();
                 loadRecentlyAddedProduct();
+                loadBlogs(); // Added to load blogs
             } else {
                 window.location.href = 'index.html';
             }
@@ -95,6 +96,47 @@
                 `;
                 recentProductContainer.appendChild(productElement);
             });
+        }
+
+        async function loadBlogs() {
+            const blogsContainer = document.getElementById('blogsContainer');
+            blogsContainer.innerHTML = ''; // Clear existing blogs
+            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+            blogsSnapshot.forEach((doc) => {
+                const blog = doc.data();
+                const blogElement = document.createElement('div');
+                blogElement.className = 'blog';
+                blogElement.innerHTML = `
+                    <h3>${blog.title}</h3>
+                    <p>${blog.description}</p>
+                    <button onclick="openBlogPopup('${doc.id}')">Read More</button>
+                `;
+                blogsContainer.appendChild(blogElement);
+            });
+        }
+
+        async function openBlogPopup(blogId) {
+            const blogRef = doc(db, 'blogs', blogId);
+            const docSnap = await getDoc(blogRef);
+            if (docSnap.exists()) {
+                const blog = docSnap.data();
+                const popup = document.createElement('div');
+                popup.className = 'popup';
+                popup.innerHTML = `
+                    <div class="popup-content">
+                        <h2>${blog.title}</h2>
+                        <p>${blog.content}</p>
+                        <button onclick="closePopup()">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(popup);
+            } else {
+                console.error("Blog not found: ", blogId);
+            }
+        }
+
+        function closePopup() {
+            document.querySelector('.popup').remove();
         }
 
         window.buyProduct = async function(productId) {
@@ -274,6 +316,21 @@
         .cart-icon:hover {
             background-color: #45a049;
         }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        .popup-content {
+            max-width: 600px;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
@@ -290,11 +347,10 @@
         <button onclick="signOut()">Sign Out</button>
     </header>
     <div class="container">
-  
         <div id="recentProductContainer"></div>
         <h2>Available Products</h2>
-     
         <div id="productsContainer"></div>
+        <div id="blogsContainer"></div> <!-- Added to display blogs -->
     </div>
     <button class="cart-icon" onclick="openCart()">🛒</button>
     <div id="cart" style="display: none;">
