@@ -69,8 +69,8 @@
                     <h3>${product.name}</h3>
                     <p>${product.description}</p>
                     <p class="price">Price: $${product.price.toFixed(2)}</p>
-                    <p class="tags">Tags: ${product.tags.join(', ')}</p>
-                    <p class="in-stock">In Stock: ${product.inStock ? 'Yes' : 'No'}</p>
+                    <p class="in-stock">In Stock: ${product.inStock}</p>
+                    <p class="tags">Tags: ${product.tags}</p>
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                 `;
                 productsContainer.appendChild(productElement);
@@ -94,6 +94,8 @@
                     <h4>${product.name}</h4>
                     <p>${product.description}</p>
                     <p class="price">Price: $${product.price.toFixed(2)}</p>
+                    <p class="in-stock">In Stock: ${product.inStock}</p>
+                    <p class="tags">Tags: ${product.tags}</p>
                     <button onclick="buyProduct('${doc.id}')">Buy Now</button>
                 `;
                 recentProductContainer.appendChild(productElement);
@@ -246,11 +248,13 @@
             font-weight: bold;
             color: #4CAF50;
         }
-        .tags {
-            font-style: italic;
-        }
         .in-stock {
             font-weight: bold;
+            color: #4CAF50;
+        }
+        .tags {
+            font-weight: bold;
+            color: #4CAF50;
         }
         button {
             background-color: #4CAF50;
