@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Product Store</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
+            authDomain: "login-e8086.firebaseapp.com",
+            projectId: "login-e8086",
+            storageBucket: "login-e8086.appspot.com",
+            messagingSenderId: "13482086131",
+            appId: "1:13482086131:web:31e8aad8911580e0083186",
+            measurementId: "G-8VQ8ME6J88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('userName').textContent = user.displayName || "User";
+                loadRecentBlogs();
+            } else {
+                window.location.href = 'index.html';
+            }
+        });
+
+        async function loadRecentBlogs() {
+            const blogsContainer = document.getElementById('blogsContainer');
+            blogsContainer.innerHTML = '';
+            const q = query(collection(db, 'blogs'), orderBy('uploadedDate', 'desc'), limit(6));
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
+                const blog = doc.data();
+                const blogElement = document.createElement('div');
+                blogElement.className = 'blog-card';
+                blogElement.innerHTML = `
+                    <h3>${blog.title}</h3>
+                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image">
+                    <p class="blog-description">${blog.description}</p>
+                    <button onclick="viewBlogDetail('${doc.id}')">Read More</button>
+                `;
+                blogsContainer.appendChild(blogElement);
+            });
+        }
+
+        function viewBlogDetail(blogId) {
+            // Redirect to blog detail page
+            window.location.href = `blog-detail.html?id=${blogId}`;
+        }
+
+        window.signOut = async function() {
+            try {
+                await auth.signOut();
+                window.location.href = 'index.html';
+            } catch (error) {
+                console.error('Sign out error:', error);
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 10px 0;
+            text-align: center;
+        }
+        #blogsContainer {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            padding: 20px 0;
+        }
+        .blog-card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .blog-card:hover {
+            transform: translateY(-5px);
+        }
+        .blog-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+        .blog-description {
+            display: -webkit-box;
+            -webkit-line-clamp: 3; /* Limits to 3 lines */
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <h1>Product Store</h1>
+            <ul>
+                <li><span id="userName"></span></li>
+                <li><button onclick="signOut()">Sign Out</button></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>Latest Blogs</h2>
+        <div id="blogsContainer"></div>
+    </div>
+</body>
+</html>

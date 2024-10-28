@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog Detail</title>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
+            authDomain: "login-e8086.firebaseapp.com",
+            projectId: "login-e8086",
+            storageBucket: "login-e8086.appspot.com",
+            messagingSenderId: "13482086131",
+            appId: "1:13482086131:web:31e8aad8911580e0083186",
+            measurementId: "G-8VQ8ME6J88"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        async function loadBlogDetail() {
+            const params = new URLSearchParams(window.location.search);
+            const blogId = params.get('id');
+
+            const blogRef = doc(db, 'blogs', blogId);
+            const docSnap = await getDoc(blogRef);
+
+            if (docSnap.exists()) {
+                const blog = docSnap.data();
+                document.getElementById('blogTitle').textContent = blog.title;
+                document.getElementById('blogContent').textContent = blog.content;
+                document.getElementById('blogImage').src = blog.imageUrl || 'placeholder.jpg';
+            } else {
+                console.error("No such blog found!");
+            }
+        }
+
+        window.onload = loadBlogDetail;
+    </script>
+</head>
+<body>
+    <h1 id="blogTitle"></h1>
+    <img id="blogImage" alt="Blog Image" />
+    <p id="blogContent"></p>
+</body>
+</html>
