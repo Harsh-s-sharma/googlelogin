@@ -28,26 +28,32 @@
 
         async function loadBlogs() {
             const blogsContainer = document.getElementById('blogsContainer');
-            blogsContainer.innerHTML = '';
-            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+            blogsContainer.innerHTML = '<p>Loading...</p>'; // Loading message
+            try {
+                const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+                blogsContainer.innerHTML = ''; // Clear loading message
 
-            if (blogsSnapshot.empty) {
-                blogsContainer.innerHTML = '<p>No blogs available.</p>';
-                return;
+                if (blogsSnapshot.empty) {
+                    blogsContainer.innerHTML = '<p>No blogs available.</p>';
+                    return;
+                }
+
+                blogsSnapshot.forEach((doc) => {
+                    const blog = doc.data();
+                    const blogElement = document.createElement('div');
+                    blogElement.className = 'blog-card';
+                    blogElement.innerHTML = `
+                        <h3>${blog.title}</h3>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                        <p class="blog-description">${blog.description}</p>
+                        <button aria-label="Read more about ${blog.title}" onclick="openBlogPopup('${doc.id}')">Read More</button>
+                    `;
+                    blogsContainer.appendChild(blogElement);
+                });
+            } catch (error) {
+                console.error("Error loading blogs: ", error);
+                blogsContainer.innerHTML = '<p>Error loading blogs. Please try again later.</p>';
             }
-
-            blogsSnapshot.forEach((doc) => {
-                const blog = doc.data();
-                const blogElement = document.createElement('div');
-                blogElement.className = 'blog-card';
-                blogElement.innerHTML = `
-                    <h3>${blog.title}</h3>
-                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                    <p class="blog-description">${blog.description}</p>
-                    <button onclick="openBlogPopup('${doc.id}')">Read More</button>
-                `;
-                blogsContainer.appendChild(blogElement);
-            });
         }
 
         async function openBlogPopup(blogId) {
