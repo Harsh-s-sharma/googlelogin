@@ -25,48 +25,49 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
+                console.log('User is authenticated:', user);
                 document.getElementById('userName').textContent = user.displayName || "User";
-                loadRecentBlogs();
+                await loadRecentBlogs();
             } else {
+                console.log('User not authenticated, redirecting to index.html');
                 window.location.href = 'index.html';
             }
         });
 
-      async function loadRecentBlogs() {
-    const blogsContainer = document.getElementById('blogsContainer');
-    blogsContainer.innerHTML = '';
-    console.log('Loading recent blogs...');
+        async function loadRecentBlogs() {
+            const blogsContainer = document.getElementById('blogsContainer');
+            blogsContainer.innerHTML = '';
+            console.log('Loading recent blogs...');
 
-    const q = query(collection(db, 'blogs'), orderBy('uploadedDate', 'desc'), limit(6));
+            const q = query(collection(db, 'blogs'), orderBy('uploadedDate', 'desc'), limit(6));
 
-    try {
-        const querySnapshot = await getDocs(q);
-        console.log('Query snapshot:', querySnapshot);
-        
-        if (querySnapshot.empty) {
-            console.log('No blogs found.');
-            return; // Exit if no blogs found
+            try {
+                const querySnapshot = await getDocs(q);
+                console.log('Query snapshot:', querySnapshot);
+                
+                if (querySnapshot.empty) {
+                    console.log('No blogs found.');
+                    return; // Exit if no blogs found
+                }
+
+                querySnapshot.forEach((doc) => {
+                    const blog = doc.data();
+                    console.log('Blog data:', blog); // Log each blog's data
+                    
+                    const blogElement = document.createElement('div');
+                    blogElement.className = 'blog-card';
+                    blogElement.innerHTML = `
+                        <h3>${blog.title}</h3>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                        <p class="blog-description">${blog.description}</p>
+                        <button onclick="openBlogPopup('${doc.id}')">Load More</button>
+                    `;
+                    blogsContainer.appendChild(blogElement);
+                });
+            } catch (error) {
+                console.error("Error loading blogs:", error);
+            }
         }
-
-        querySnapshot.forEach((doc) => {
-            const blog = doc.data();
-            console.log('Blog data:', blog); // Log each blog's data
-            
-            const blogElement = document.createElement('div');
-            blogElement.className = 'blog-card';
-            blogElement.innerHTML = `
-                <h3>${blog.title}</h3>
-                <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                <p class="blog-description">${blog.description}</p>
-                <button onclick="openBlogPopup('${doc.id}')">Load More</button>
-            `;
-            blogsContainer.appendChild(blogElement);
-        });
-    } catch (error) {
-        console.error("Error loading blogs:", error);
-    }
-}
-
 
         async function openBlogPopup(blogId) {
             const blogRef = doc(db, 'blogs', blogId);
@@ -148,6 +149,7 @@
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             padding: 20px 0;
+            border: 2px solid red; /* For debugging */
         }
         .blog-card {
             background-color: white;
