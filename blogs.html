@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Blogs - Product Store</title>
+    <title>All Blogs - Product Store</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -20,112 +19,49 @@
         };
 
         const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
         const db = getFirestore(app);
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                console.log('User is authenticated:', user);
-                document.getElementById('userName').textContent = user.displayName || "User";
-                await loadRecentBlogs();
-            } else {
-                console.log('User not authenticated, redirecting to index.html');
-                window.location.href = 'index.html';
-            }
-        });
+        // Load all blogs on page load
+        window.onload = async () => {
+            await loadBlogs();
+        };
 
-        async function loadRecentBlogs() {
+        async function loadBlogs() {
             const blogsContainer = document.getElementById('blogsContainer');
             blogsContainer.innerHTML = '';
-            console.log('Loading recent blogs...');
+            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
 
-            const q = query(collection(db, 'blogs'), orderBy('uploadedDate', 'desc'), limit(6));
-
-            try {
-                const querySnapshot = await getDocs(q);
-                console.log('Query snapshot:', querySnapshot);
-                
-                if (querySnapshot.empty) {
-                    console.log('No blogs found.');
-                    return; // Exit if no blogs found
-                }
-
-                querySnapshot.forEach((doc) => {
-                    const blog = doc.data();
-                    console.log('Blog data:', blog); // Log each blog's data
-                    
-                    const blogElement = document.createElement('div');
-                    blogElement.className = 'blog-card';
-                    blogElement.innerHTML = `
-                        <h3>${blog.title}</h3>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                        <p class="blog-description">${blog.description}</p>
-                        <button class="load-more-btn" onclick="openBlogPopup('${doc.id}')">Load More</button>
-                    `;
-                    blogsContainer.appendChild(blogElement);
-                });
-            } catch (error) {
-                console.error("Error loading blogs:", error);
+            if (blogsSnapshot.empty) {
+                blogsContainer.innerHTML = '<p>No blogs available.</p>';
+                return;
             }
-        }
 
-        async function openBlogPopup(blogId) {
-            const blogRef = doc(db, 'blogs', blogId);
-            const docSnap = await getDoc(blogRef);
-            if (docSnap.exists()) {
-                const blog = docSnap.data();
-                const popup = document.createElement('div');
-                popup.className = 'popup';
-                popup.innerHTML = `
-                    <div class="popup-content">
-                        <h2>${blog.title}</h2>
-                        <p>${blog.content}</p>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                        <button class="close-btn" onclick="closePopup()">Close</button>
-                    </div>
+            blogsSnapshot.forEach((doc) => {
+                const blog = doc.data();
+                const blogElement = document.createElement('div');
+                blogElement.className = 'blog-card';
+                blogElement.innerHTML = `
+                    <h3>${blog.title}</h3>
+                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                    <p class="blog-description">${blog.description}</p>
+                    <div class="blog-content">${blog.content}</div>
                 `;
-                document.body.appendChild(popup);
-            } else {
-                console.error("Blog not found: ", blogId);
-            }
-        }
-
-        function closePopup() {
-            const popup = document.querySelector('.popup');
-            if (popup) {
-                popup.remove();
-            }
-        }
-
-        window.signOut = async function() {
-            try {
-                await auth.signOut();
-                window.location.href = 'index.html';
-            } catch (error) {
-                console.error('Sign out error:', error);
-            }
+                blogsContainer.appendChild(blogElement);
+            });
         }
     </script>
     <style>
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: Arial, sans-serif;
             background-color: #f4f4f4;
             margin: 0;
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        header {
-            background-color: #333;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 0;
         }
         nav {
-            background-color: #444;
+            background-color: #333;
             color: #fff;
             padding: 1em;
+            text-align: center;
         }
         nav ul {
             list-style: none;
@@ -139,24 +75,21 @@
         nav a {
             color: #fff;
             text-decoration: none;
-            transition: color 0.3s;
         }
         nav a:hover {
             color: #ccc;
         }
-        .container {
-            flex: 1;
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
-        }
-        h1, h2 {
-            margin: 0 0 20px;
+        h1 {
+            text-align: center;
+            margin: 20px 0;
         }
         #blogsContainer {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: auto;
         }
         .blog-card {
             background-color: white;
@@ -164,18 +97,15 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s, box-shadow 0.3s;
-            position: relative;
+            transition: transform 0.3s ease;
         }
         .blog-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
         }
         .blog-image {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            margin-bottom: 10px;
         }
         .blog-description {
             display: -webkit-box;
@@ -183,76 +113,23 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
-            margin-bottom: 10px;
+            margin: 10px 0;
         }
-        .load-more-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .load-more-btn:hover {
-            background-color: #218838;
-        }
-        .popup {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .popup-content {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            max-width: 600px;
-            width: 90%;
-            position: relative;
-        }
-        .close-btn {
-            background-color: #dc3545;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-        .close-btn:hover {
-            background-color: #c82333;
-        }
-        footer {
-            text-align: center;
-            padding: 10px;
-            background-color: #333;
-            color: white;
+        .blog-content {
+            margin-top: 10px;
         }
     </style>
 </head>
 <body>
-    <header>
-        <h1>Product Store</h1>
-        <nav>
-            <ul>
-                <li><span id="userName"></span></li>
-                <li><button class="load-more-btn" onclick="signOut()">Sign Out</button></li>
-            </ul>
-        </nav>
-    </header>
-    <div class="container">
-        <h2>Latest Blogs</h2>
-        <div id="blogsContainer"></div>
-    </div>
-    <footer>
-        <p>&copy; 2024 Product Store. All rights reserved.</p>
-    </footer>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blogs.html">Blogs</a></li>
+            <li><a href="/dashboard.html">Dashboard</a></li>
+            <li><a href="/admin.html">Admin</a></li>
+        </ul>
+    </nav>
+    <h1>All Blogs</h1>
+    <div id="blogsContainer"></div>
 </body>
 </html>
