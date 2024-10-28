@@ -7,7 +7,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, orderBy, limit, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -32,18 +32,19 @@
             }
         });
 
-        async function loadBlogs() {
+        async function loadRecentBlogs() {
             const blogsContainer = document.getElementById('blogsContainer');
             blogsContainer.innerHTML = '';
-            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
-            blogsSnapshot.forEach((doc) => {
+            const q = query(collection(db, 'blogs'), orderBy('uploadedDate', 'desc'), limit(6)); // Modify the query to get recent blogs
+            const querySnapshot = await getDocs(q);
+            querySnapshot.forEach((doc) => {
                 const blog = doc.data();
                 const blogElement = document.createElement('div');
                 blogElement.className = 'blog-card';
                 blogElement.innerHTML = `
                     <h3>${blog.title}</h3>
                     <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                    <p>${blog.description}</p>
+                    <p class="blog-description">${blog.description}</p>
                     <button onclick="openBlogPopup('${doc.id}')">Load More</button>
                 `;
                 blogsContainer.appendChild(blogElement);
@@ -61,7 +62,7 @@
                     <div class="popup-content">
                         <h2>${blog.title}</h2>
                         <p>${blog.content}</p>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image object-fit-cover rounded-lg shadow-md w-full h-64">
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image">
                         <button onclick="closePopup()">Close</button>
                     </div>
                 `;
@@ -76,11 +77,6 @@
             if (popup) {
                 popup.remove();
             }
-        }
-
-        function viewBlogDetail(blogId) {
-            // Redirect to blog detail page
-            window.location.href = `blog-detail.html?id=${blogId}`;
         }
 
         window.signOut = async function() {
@@ -107,6 +103,28 @@
             color: white;
             padding: 10px 0;
             text-align: center;
+        }
+        nav {
+            background-color: #333;
+            color: #fff;
+            padding: 1em;
+            text-align: center;
+        }
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav li {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+        }
+        nav a:hover {
+            color: #ccc;
         }
         #blogsContainer {
             display: grid;
@@ -149,47 +167,30 @@
         button:hover {
             background-color: #218838;
         }
-    </style>
-</head>
-<body>
-    <style>
-        nav {
-            background-color: #333;
-            color: #fff;
-            padding: 1em;
-            text-align: center;
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        nav ul {
-            list-style: none;
-            margin: 0;
-            padding: 0;
-        }
-        nav li {
-            display: inline-block;
-            margin-right: 20px;
-        }
-        nav a {
-            color: #fff;
-            text-decoration: none;
-        }
-        nav a:hover {
-            color: #ccc;
+        .popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
         }
     </style>
 </head>
 <body>
-    <nav>
-        <ul>
-            <li><a href="/">Home</a></li>
-            <li><a href="/blogs.html">Blogs</a></li>
-            <li><a href="/dashboard.html">dashboard</a></li>
-            <li><a href="/admin.html">Admin</a></li>
-
-        </ul>
-    </nav>
     <header>
+        <h1>Product Store</h1>
         <nav>
-            <h1>Product Store</h1>
             <ul>
                 <li><span id="userName"></span></li>
                 <li><button onclick="signOut()">Sign Out</button></li>
