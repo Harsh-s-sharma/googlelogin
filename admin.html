@@ -179,121 +179,73 @@
             blogsSnapshot.forEach(doc => {
                 const blog = doc.data();
                 const blogElement = document.createElement('div');
-                blogElement.textContent = `Title: ${blog.title}`;
+                blogElement.innerHTML = `Title: ${blog.title}`;
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.onclick = () => editBlog(doc.id, blog);
                 const deleteButton = document.createElement('button');
                 deleteButton.textContent = 'Delete';
                 deleteButton.onclick = () => deleteBlog(doc.id);
+                blogElement.appendChild(editButton);
                 blogElement.appendChild(deleteButton);
                 blogsDisplay.appendChild(blogElement);
             });
         }
+
+        // Edit Blog
+        function editBlog(blogId, blog) {
+            document.getElementById('blogTitle').value = blog.title;
+            document.getElementById('blogDescription').textContent = blog.description; // For contenteditable
+            document.getElementById('addBlogBtn').textContent = 'Update Blog';
+            document.getElementById('addBlogBtn').onclick = () => updateBlog(blogId);
+        }
+
+        // Update Blog
+        window.updateBlog = async function(blogId) {
+            const title = document.getElementById('blogTitle').value;
+            const description = document.getElementById('blogDescription').textContent;
+
+            if (!title || !description) {
+                alert('Please provide valid blog details.');
+                return;
+            }
+
+            await updateDoc(doc(db, 'blogs', blogId), { title, description });
+            document.getElementById('addBlogBtn').textContent = 'Add Blog';
+            document.getElementById('addBlogBtn').onclick = addBlog;
+            displayBlogs(); // Refresh the blog list
+        };
 
         // Delete Blog
         window.deleteBlog = async function(blogId) {
             await deleteDoc(doc(db, 'blogs', blogId));
             displayBlogs(); // Refresh the blog list
         };
+
     </script>
-    <style>
-        .container {
-            max-width: 800px;
-            margin: 40px auto;
-            padding: 20px;
-            background-color: #f9f9f9;
-            border: 1px solid #ddd;
-            border-radius: 10px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-        .admin-login-btn {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .status-message {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 20px;
-        }
-        .products-display, .blogs-display {
-            margin-top: 20px;
-        }
-        .admin-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-        }
-        .admin-panel h2 {
-            margin: 20px 0;
-        }
-        .admin-panel div {
-            margin: 10px 0;
-        }
-        .admin-panel input, .admin-panel select, .admin-panel textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin: 5px 0;
-        }
-        .admin-panel button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 16px;
-        }
-        .admin-panel button:hover {
-            background-color: #45a049;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Admin Panel</h1>
-        <button id="adminLoginBtn" onclick="handleAdminLogin()" class="admin-login-btn">Admin Login</button>
-        <button id="logoutBtn" onclick="logout()" class="admin-login-btn" style="display: none;">Logout</button>
-        <div id="status" class="status-message"></div>
+    <div id="status"></div>
+    <button id="adminLoginBtn" onclick="handleAdminLogin()">Login with Google</button>
 
-        <div id="adminPanel" class="admin-panel" style="display: none;">
-            <h2>Manage Products</h2>
-            <div>
-                <input type="text" id="productName" placeholder="Product Name" />
-                <input type="number" id="productPrice" placeholder="Product Price" />
-                <input type="checkbox" id="inStock" /> In Stock
-                <select id="productTags">
-                    <option value="">Select Tags</option>
-                    <option value="Sales">Sales</option>
-                    <option value="New">New</option>
-                    <option value="Featured">Featured</option>
-                </select>
-                <input type="file" id="productImage" accept="image/*" />
-                <button id="addProductBtn" onclick="addProduct()" class="admin-login-btn">Add Product</button>
-            </div>
-            <div id="productsDisplay" class="products-display"></div>
+    <div id="adminPanel" style="display: none;">
+        <h2>Admin Panel</h2>
 
-            <h2>Manage Blogs</h2>
-            <div>
-                <input type="text" id="blogTitle" placeholder="Blog Title" />
-                <div id="blogDescription" class="blog-description-editor" contenteditable="true" placeholder="Blog Description"></div>
-                <input type="file" id="blogImage" accept="image/*" />
-                <select id="blogTags" multiple>
-                    <option value="Technology">Technology</option>
-                    <option value="Lifestyle">Lifestyle</option>
-                    <option value="Health">Health</option>
-                    <option value="Finance">Finance</option>
-                    <option value="Travel">Travel</option>
-                </select>
-                <button id="addBlogBtn" onclick="addBlog()" class="admin-login-btn">Add Blog</button>
-            </div>
-            <div id="blogsDisplay" class="blogs-display"></div>
-        </div>
+        <h3>Products</h3>
+        <input type="text" id="productName" placeholder="Product Name">
+        <input type="number" id="productPrice" placeholder="Product Price">
+        <input type="file" id="productImage" accept="image/*">
+        <label><input type="checkbox" id="inStock"> In Stock</label>
+        <input type="text" id="productTags" placeholder="Product Tags">
+        <button id="addProductBtn" onclick="addProduct()">Add Product</button>
+        <div id="productsDisplay"></div>
+
+        <h3>Blogs</h3>
+        <input type="text" id="blogTitle" placeholder="Blog Title">
+        <div contenteditable="true" id="blogDescription" placeholder="Blog Description"></div>
+        <input type="file" id="blogImage" accept="image/*">
+        <button id="addBlogBtn" onclick="addBlog()">Add Blog</button>
+        <div id="blogsDisplay"></div>
     </div>
 </body>
 </html>
