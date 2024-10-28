@@ -117,7 +117,8 @@
                 blogElement.innerHTML = `
                     <h3>${blog.title}</h3>
                     <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-                    <p>${blog.description}</p>
+                    <p>${blog.description.substring(0, 100)}...</p>
+                    <button onclick="openBlogPopup('${doc.id}')">Read More</button>
                 `;
                 blogsContainer.appendChild(blogElement);
             });
