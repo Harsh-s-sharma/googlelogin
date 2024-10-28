@@ -3,10 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>All Blogs - Product Store</title>
+    <title>Blog Detail - Product Store</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-        import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCeqnstsolQ7ypJIlGiC0KvEv4pKk4JV7o",
@@ -44,10 +44,38 @@
                     <h3>${blog.title}</h3>
                     <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                     <p class="blog-description">${blog.description}</p>
-                    <div class="blog-content">${blog.content}</div>
+                    <button onclick="openBlogPopup('${doc.id}')">Read More</button>
                 `;
                 blogsContainer.appendChild(blogElement);
             });
+        }
+
+        async function openBlogPopup(blogId) {
+            const blogRef = doc(db, 'blogs', blogId);
+            const docSnap = await getDoc(blogRef);
+            if (docSnap.exists()) {
+                const blog = docSnap.data();
+                const popup = document.createElement('div');
+                popup.className = 'popup';
+                popup.innerHTML = `
+                    <div class="popup-content">
+                        <h2>${blog.title}</h2>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image">
+                        <p>${blog.content}</p>
+                        <button onclick="closePopup()">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(popup);
+            } else {
+                console.error("Blog not found: ", blogId);
+            }
+        }
+
+        function closePopup() {
+            const popup = document.querySelector('.popup');
+            if (popup) {
+                popup.remove();
+            }
         }
     </script>
     <style>
@@ -115,8 +143,35 @@
             text-overflow: ellipsis;
             margin: 10px 0;
         }
-        .blog-content {
-            margin-top: 10px;
+        button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .popup {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .popup-content {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 600px;
+            width: 100%;
         }
     </style>
 </head>
