@@ -105,56 +105,24 @@
                 recentProductContainer.appendChild(productElement);
             });
         }
-        let lastVisible = null;
 
- // Function to load blogs
-async function loadBlogs() {
-    const blogsContainer = document.getElementById('blogsContainer');
-    blogsContainer.innerHTML = '';
-    const blogsSnapshot = await getDocs(collection(db, 'blogs'));
-    blogsSnapshot.forEach((doc) => {
-        const blog = doc.data();
-        const blogElement = document.createElement('div');
-        blogElement.className = 'blog-card';
-        blogElement.innerHTML = `
-            <h3>${blog.title}</h3>
-            <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
-            <p>${blog.description}</p>
-            <button onclick="openBlogPopup('${doc.id}')">Load More</button>
-        `;
-        blogsContainer.appendChild(blogElement);
-    });
-}
-
-// Function to open the modal and display blog details
-async function openBlogPopup(blogId) {
-    const docRef = doc(db, 'blogs', blogId);
-    const blogDoc = await getDoc(docRef);
-    if (blogDoc.exists()) {
-        const blog = blogDoc.data();
-        document.getElementById('modalTitle').innerText = blog.title;
-        document.getElementById('modalImage').src = blog.imageUrl || 'placeholder.jpg';
-        document.getElementById('modalDescription').innerText = blog.description;
-        document.getElementById('modalContent').innerHTML = blog.content || 'No additional content available.';
-        
-        // Show the modal
-        document.getElementById('blogModal').style.display = 'block';
-    }
-}
-
-// Function to close the modal
-function closeBlogPopup() {
-    document.getElementById('blogModal').style.display = 'none';
-}
-
-// Close the modal if the user clicks outside of the modal content
-window.onclick = function(event) {
-    const modal = document.getElementById('blogModal');
-    if (event.target === modal) {
-        closeBlogPopup();
-    }
-}
-
+        async function loadBlogs() {
+            const blogsContainer = document.getElementById('blogsContainer');
+            blogsContainer.innerHTML = '';
+            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+            blogsSnapshot.forEach((doc) => {
+                const blog = doc.data();
+                const blogElement = document.createElement('div');
+                blogElement.className = 'blog-card';
+                blogElement.innerHTML = `
+                    <h3>${blog.title}</h3>
+                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                    <p>${blog.description}</p>
+                    <button onclick="openBlogPopup('${doc.id}')">Load More</button>
+                `;
+                blogsContainer.appendChild(blogElement);
+            });
+        }
 
         async function openBlogPopup(blogId) {
             const blogRef = doc(db, 'blogs', blogId);
