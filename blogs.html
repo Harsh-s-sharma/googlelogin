@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - Product Store</title>
+    <title>Blogs - Product Store</title>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
@@ -60,7 +60,7 @@
                         <h3>${blog.title}</h3>
                         <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
                         <p class="blog-description">${blog.description}</p>
-                        <button onclick="openBlogPopup('${doc.id}')">Load More</button>
+                        <button class="load-more-btn" onclick="openBlogPopup('${doc.id}')">Load More</button>
                     `;
                     blogsContainer.appendChild(blogElement);
                 });
@@ -80,8 +80,8 @@
                     <div class="popup-content">
                         <h2>${blog.title}</h2>
                         <p>${blog.content}</p>
-                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image">
-                        <button onclick="closePopup()">Close</button>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                        <button class="close-btn" onclick="closePopup()">Close</button>
                     </div>
                 `;
                 document.body.appendChild(popup);
@@ -108,25 +108,24 @@
     </script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             background-color: #f4f4f4;
-        }
-        .container {
-            max-width: 1200px;
-            margin: auto;
-            padding: 20px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
         }
         header {
             background-color: #333;
             color: white;
-            padding: 10px 0;
+            padding: 15px 0;
             text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         nav {
-            background-color: #333;
+            background-color: #444;
             color: #fff;
             padding: 1em;
-            text-align: center;
         }
         nav ul {
             list-style: none;
@@ -140,16 +139,24 @@
         nav a {
             color: #fff;
             text-decoration: none;
+            transition: color 0.3s;
         }
         nav a:hover {
             color: #ccc;
         }
+        .container {
+            flex: 1;
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+        }
+        h1, h2 {
+            margin: 0 0 20px;
+        }
         #blogsContainer {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 20px;
-            padding: 20px 0;
-            border: 2px solid red; /* For debugging */
         }
         .blog-card {
             background-color: white;
@@ -157,15 +164,18 @@
             border-radius: 8px;
             padding: 15px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
         }
         .blog-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.2);
         }
         .blog-image {
             max-width: 100%;
             height: auto;
             border-radius: 8px;
+            margin-bottom: 10px;
         }
         .blog-description {
             display: -webkit-box;
@@ -173,8 +183,9 @@
             -webkit-box-orient: vertical;
             overflow: hidden;
             text-overflow: ellipsis;
+            margin-bottom: 10px;
         }
-        button {
+        .load-more-btn {
             background-color: #28a745;
             color: white;
             border: none;
@@ -183,7 +194,7 @@
             cursor: pointer;
             transition: background-color 0.3s;
         }
-        button:hover {
+        .load-more-btn:hover {
             background-color: #218838;
         }
         .popup {
@@ -196,13 +207,33 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            z-index: 1000;
         }
         .popup-content {
             background: white;
             padding: 20px;
             border-radius: 8px;
             max-width: 600px;
-            width: 100%;
+            width: 90%;
+            position: relative;
+        }
+        .close-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .close-btn:hover {
+            background-color: #c82333;
+        }
+        footer {
+            text-align: center;
+            padding: 10px;
+            background-color: #333;
+            color: white;
         }
     </style>
 </head>
@@ -212,7 +243,7 @@
         <nav>
             <ul>
                 <li><span id="userName"></span></li>
-                <li><button onclick="signOut()">Sign Out</button></li>
+                <li><button class="load-more-btn" onclick="signOut()">Sign Out</button></li>
             </ul>
         </nav>
     </header>
@@ -220,5 +251,8 @@
         <h2>Latest Blogs</h2>
         <div id="blogsContainer"></div>
     </div>
+    <footer>
+        <p>&copy; 2024 Product Store. All rights reserved.</p>
+    </footer>
 </body>
 </html>
