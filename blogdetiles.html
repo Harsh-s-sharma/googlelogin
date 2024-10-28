@@ -21,27 +21,87 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        async function loadBlogDetail() {
-            const params = new URLSearchParams(window.location.search);
-            const blogId = params.get('id');
+        async function loadBlogs() {
+            const blogsContainer = document.getElementById('blogsContainer');
+            blogsContainer.innerHTML = '';
+            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+            blogsSnapshot.forEach((doc) => {
+                const blog = doc.data();
+                const blogElement = document.createElement('div');
+                blogElement.className = 'blog-card';
+                blogElement.innerHTML = `
+                    <h3>${blog.title}</h3>
+                    <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="blog-image" onerror="this.onerror=null;this.src='placeholder.jpg';">
+                    <p>${blog.description}</p>
+                    <button onclick="openBlogPopup('${doc.id}')">Load More</button>
+                `;
+                blogsContainer.appendChild(blogElement);
+            });
+        }
 
+        async function openBlogPopup(blogId) {
             const blogRef = doc(db, 'blogs', blogId);
             const docSnap = await getDoc(blogRef);
-
             if (docSnap.exists()) {
                 const blog = docSnap.data();
-                document.getElementById('blogTitle').textContent = blog.title;
-                document.getElementById('blogContent').textContent = blog.content;
-                document.getElementById('blogImage').src = blog.imageUrl || 'placeholder.jpg';
+                const popup = document.createElement('div');
+                popup.className = 'popup';
+                popup.innerHTML = `
+                    <div class="popup-content">
+                        <h2>${blog.title}</h2>
+                        <p>${blog.content}</p>
+                        <img src="${blog.imageUrl || 'placeholder.jpg'}" alt="${blog.title}" class="popup-image object-fit-cover rounded-lg shadow-md w-full h-64">
+                        <button onclick="closePopup()">Close</button>
+                    </div>
+                `;
+                document.body.appendChild(popup);
             } else {
-                console.error("No such blog found!");
+                console.error("Blog not found: ", blogId);
             }
         }
 
-        window.onload = loadBlogDetail;
-    </script>
+        function closePopup() {
+            const popup = document.querySelector('.popup');
+            if (popup) {
+                popup.remove();
+            }
+        }
+        </script>
+    <style>
+        nav {
+            background-color: #333;
+            color: #fff;
+            padding: 1em;
+            text-align: center;
+        }
+        nav ul {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        nav li {
+            display: inline-block;
+            margin-right: 20px;
+        }
+        nav a {
+            color: #fff;
+            text-decoration: none;
+        }
+        nav a:hover {
+            color: #ccc;
+        }
+    </style>
 </head>
 <body>
+    <nav>
+        <ul>
+            <li><a href="/">Home</a></li>
+            <li><a href="/blogs.html">Blogs</a></li>
+            <li><a href="/dashboard.html">dashboard</a></li>
+            <li><a href="/admin.html">Admin</a></li>
+
+        </ul>
+    </nav>
     <h1 id="blogTitle"></h1>
     <img id="blogImage" alt="Blog Image" />
     <p id="blogContent"></p>
