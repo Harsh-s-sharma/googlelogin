@@ -105,11 +105,11 @@
                 recentProductContainer.appendChild(productElement);
             });
         }
+        let lastVisible = null;
 
         async function loadBlogs() {
             const blogsContainer = document.getElementById('blogsContainer');
-            blogsContainer.innerHTML = '';
-            const blogsSnapshot = await getDocs(collection(db, 'blogs'));
+            const blogsSnapshot = await getDocs(collection(db, 'blogs').orderBy('createdAt').startAfter(lastVisible).limit(5));
             blogsSnapshot.forEach((doc) => {
                 const blog = doc.data();
                 const blogElement = document.createElement('div');
@@ -122,6 +122,7 @@
                 `;
                 blogsContainer.appendChild(blogElement);
             });
+            lastVisible = blogsSnapshot.docs[blogsSnapshot.docs.length - 1];
         }
 
         async function openBlogPopup(blogId) {
